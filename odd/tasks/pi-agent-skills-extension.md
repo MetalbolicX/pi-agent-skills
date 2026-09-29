@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning complete. Design decisions locked (below). T1 scaffold done (see Evidence log); T2–T8 pending.
+Planning complete. Design decisions locked (below). T1–T2 done (see Evidence log); T3–T8 pending.
 
 ## Source
 
@@ -81,7 +81,7 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
       `tsconfig` strict + `noUncheckedIndexedAccess` (TS 7), node:test + tsx harness, oxlint,
       `.gitignore`, README (real content), placeholder extension entry + smoke test.
       Acceptance: `pnpm test`, `tsc --noEmit`, `oxlint src`, `pnpm build` (emits `dist/extension.js`) all green in empty-state.
-- [ ] **T2 Core: discovery** — roots config (defaults per decision 2), walker, frontmatter
+- [x] **T2 Core: discovery** — roots config (defaults per decision 2), walker, frontmatter
       parse/validate, first-wins dedup + shadow warning, TTL store + in-flight dedup, resolve
       ladder. Port `fs-walk/parse/skill-store/match` unit tests.
 - [ ] **T3 Core: path safety** — `resolveSafeSkillFilePath` port + traversal matrix
@@ -101,6 +101,8 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 
 ## Open items (not blockers)
 
+- **R3-001 follow-up (advisory, non-blocking)**: native review flagged `src/core/store.ts:35-39` (`ensure` — TTL/in-flight caching) as reliability WARNING / informational. No correction opened; review stands approved. Revisit cache/failed-scan semantics when touching the store (T5 wiring).
+
 - Verify Codex skills layout (`~/.codex/skills`?) once Codex CLI is present; roots are config-driven.
 - npm publish + package distribution: user decision after T8.
 - Review workload: tasks are scoped small; T5/T7 are the largest.
@@ -110,3 +112,10 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 | Task | Commit | Date | Checks |
 |------|--------|------|--------|
 | T1 Scaffold | `53fa3fd` | 2026-09-29 | worker: all 5 gates green; verify: clean-room `pnpm install` exit 0 (after `allowBuilds` fix), test 1/1, typecheck/lint clean, rolldown build emits ESM `dist/extension.js`; 11 structural checks PASS (independent gentle-ai-verify) |
+| T2 Discovery core | `34475cd` | 2026-09-29 | worker ×2 (impl + 4 source-fidelity alignments); verify PASS ×2 — 20/20 tests, gates green, port fidelity vs source confirmed; native review (RDD): assess unassessable → started at base 53fa3fd; tier medium, lens review-reliability; **approved**, acknowledged, authority burned; advisory R3-001 (store.ts:35-39, informational) |
+
+## Process decisions (ODD ledger)
+
+- **TDD mode**: disabled. Source: ODD default — no project/session TDD config exists and the user made no TDD choice (strict TDD is bound to the SDD cycle in this harness). Ordinary checks: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`. Forwarded to every implementation delegation.
+- **RDD ledger**: T1 — no assess run (process debt; scaffold-only candidate, placeholder entry). T2 — assess `unassessable` (native schema failure, no diagnostic) → treated high → native review started at base `53fa3fd` (committed range) → tier medium, lens review-reliability → **approved** → acknowledged, authority burned. Last reviewed boundary: `34475cd`.
+- **Delivery ledger**: forecast ≈ 2,400 authored lines total (T1–T8, generated files excluded). Running count: T1 ≈ 150 + T2 = 508 → **≈ 658** (crossed the ~400 budget at T2). Strategy `ask-on-risk` (default): chain-strategy question asked at T2 close — outcome recorded here once answered.
