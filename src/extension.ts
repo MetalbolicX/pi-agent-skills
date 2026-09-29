@@ -4,6 +4,7 @@ import { fromEnv } from "./adapter/config.js";
 import { getToolRoots } from "./adapter/roots.js";
 import { createSkillStore } from "./core/store.js";
 import { getAvailableSkillsTool, readSkillFileTool, runSkillScriptTool } from "./adapter/tools.js";
+import { registerInjection } from "./adapter/injection.js";
 
 export default function (pi: ExtensionAPI): void {
   const config = fromEnv();
@@ -15,5 +16,6 @@ export default function (pi: ExtensionAPI): void {
     pi.registerTool(getAvailableSkillsTool(toolDeps));
     pi.registerTool(readSkillFileTool(toolDeps));
     pi.registerTool(runSkillScriptTool(toolDeps));
+    registerInjection(pi, { store, advertisedRoots: roots.advertised });
   })();
 }
