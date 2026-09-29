@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning complete. Design decisions locked (below). **Implementation not started.**
+Planning complete. Design decisions locked (below). T1 scaffold done (see Evidence log); T2–T8 pending.
 
 ## Source
 
@@ -36,6 +36,7 @@ Architecture digest saved to Engram (obs 7167) with file:line references.
 | Module system | ESM (`"type": "module"`) | Locked |
 | Package manager | pnpm | Same as source repo |
 | npm name / license | `pi-agent-skills` / MIT | Decision 1; MIT parity with source |
+| pnpm build-script policy | `allowBuilds: false` for `@google/genai`, `esbuild`, `protobufjs` in `pnpm-workspace.yaml` | pnpm 11+ replaced `ignoredBuiltDependencies` (silently ignored) with explicit `allowBuilds` booleans; scripts unneeded — all gates pass without them |
 
 Verified against installed Pi 0.87.1 (2026-09-29): jiti loads TS locally (no build for dev),
 `ExtensionAPI`/`ExtensionContext`/`ToolDefinition`/`SessionCompactEvent`/`SessionShutdownEvent`
@@ -75,7 +76,7 @@ Pi natively indexes `.pi/skills`, `.agents/skills` (project, cwd→repo-root), `
 Each task = one work-unit commit on a feature branch (branch from `main`), tests and docs
 alongside behavior, Conventional Commit message, commit hash recorded below as evidence.
 
-- [ ] **T1 Scaffold repo** — `package.json` (ESM, `pi-agent-skills`, peerDeps + devDeps + engines per
+- [x] **T1 Scaffold repo** — `package.json` (ESM, `pi-agent-skills`, peerDeps + devDeps + engines per
       Toolchain table), `rolldown.config.js` (`src/extension.ts` → `dist/extension.js`, ESM/node),
       `tsconfig` strict + `noUncheckedIndexedAccess` (TS 7), node:test + tsx harness, oxlint,
       `.gitignore`, README (real content), placeholder extension entry + smoke test.
@@ -108,4 +109,4 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 
 | Task | Commit | Date | Checks |
 |------|--------|------|--------|
-| (none — implementation not started) | | | |
+| T1 Scaffold | `53fa3fd` | 2026-09-29 | worker: all 5 gates green; verify: clean-room `pnpm install` exit 0 (after `allowBuilds` fix), test 1/1, typecheck/lint clean, rolldown build emits ESM `dist/extension.js`; 11 structural checks PASS (independent gentle-ai-verify) |
