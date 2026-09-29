@@ -4,6 +4,8 @@ import type { RootsConfig, SkillRoot } from "./types.js";
 
 const DEPTH = 3;
 const extensionSources = [".claude", ".agents", ".codex", ".opencode"] as const;
+const ADVERTISED_SOURCES = new Set<SkillRoot["source"]>([".claude", ".codex", ".opencode", "opencode-config"]);
+const isAdvertisedRoot = (root: SkillRoot): boolean => ADVERTISED_SOURCES.has(root.source);
 
 async function findGitRoot(cwd: string): Promise<string> {
   let current = path.resolve(cwd);
@@ -31,11 +33,11 @@ export async function getDefaultRoots(cwd: string, home: string): Promise<RootsC
   all.push({ path: path.join(home, ".config", "opencode", "skills"), scope: "user", source: "opencode-config", maxDepth: DEPTH });
   return {
     all,
-    // Pi already indexes .agents/skills at project and user scope.
-    advertised: all.filter((root) => root.source !== ".agents"),
+    advertised: all.filter(isAdvertisedRoot),
   };
 }
 
 export function rootsFromList(roots: readonly SkillRoot[]): RootsConfig {
-  return { all: [...roots], advertised: roots.filter((root) => root.source !== ".agents") };
+  // Custom roots tagged `native` remain tool-reachable but are not re-advertised.
+  return { all: [...roots], advertised: roots.filter(isAdvertisedRoot) };
 }
