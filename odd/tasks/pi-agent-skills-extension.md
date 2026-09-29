@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning complete. Design decisions locked (below). T1–T2 done (see Evidence log); T3–T8 pending.
+Planning complete. Design decisions locked (below). T1–T3 done (see Evidence log); T4–T8 pending.
 
 ## Source
 
@@ -84,7 +84,7 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 - [x] **T2 Core: discovery** — roots config (defaults per decision 2), walker, frontmatter
       parse/validate, first-wins dedup + shadow warning, TTL store + in-flight dedup, resolve
       ladder. Port `fs-walk/parse/skill-store/match` unit tests.
-- [ ] **T3 Core: path safety** — `resolveSafeSkillFilePath` port + traversal matrix
+- [x] **T3 Core: path safety** — `resolveSafeSkillFilePath` port + traversal matrix
       (`../`, backslash, absolute, null byte, symlink escape; traversal vs not_found distinction).
 - [ ] **T4 Core: scripts + risk** — exec-bit/shebang registry, risk scanner (4 categories),
       arg escaper. Port category matrix + escaping tests.
@@ -101,7 +101,7 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 
 ## Open items (not blockers)
 
-- **R3-001 follow-up (advisory, non-blocking)**: native review flagged `src/core/store.ts:35-39` (`ensure` — TTL/in-flight caching) as reliability WARNING / informational. No correction opened; review stands approved. Revisit cache/failed-scan semantics when touching the store (T5 wiring).
+- **R3-001 follow-up (advisory, non-blocking)**: T2 review flagged `src/core/store.ts:35-39` (`ensure` — TTL/in-flight caching) and T3 review flagged `src/core/path-safety.ts:20` (lexical containment check), both reliability WARNING / informational. No corrections opened; reviews stand approved. Revisit both when wiring T5.
 
 - Verify Codex skills layout (`~/.codex/skills`?) once Codex CLI is present; roots are config-driven.
 - npm publish + package distribution: user decision after T8.
@@ -113,9 +113,10 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 |------|--------|------|--------|
 | T1 Scaffold | `53fa3fd` | 2026-09-29 | worker: all 5 gates green; verify: clean-room `pnpm install` exit 0 (after `allowBuilds` fix), test 1/1, typecheck/lint clean, rolldown build emits ESM `dist/extension.js`; 11 structural checks PASS (independent gentle-ai-verify) |
 | T2 Discovery core | `34475cd` | 2026-09-29 | worker ×2 (impl + 4 source-fidelity alignments); verify PASS ×2 — 20/20 tests, gates green, port fidelity vs source confirmed; native review (RDD): assess unassessable → started at base 53fa3fd; tier medium, lens review-reliability; **approved**, acknowledged, authority burned; advisory R3-001 (store.ts:35-39, informational) |
+| T3 Path safety | `3a68a33` | 2026-09-29 | worker 1 round; verify PASS — 26/26 tests, gates green, fidelity confirmed (one benign hardening divergence: root path.resolve), traversal matrix complete, security reasoning check passed; native review (RDD): assess unassessable → started at base 34475cd; tier medium, lens review-reliability; **approved**, acknowledged, authority burned; advisory R3-001 (path-safety.ts:20, informational) |
 
 ## Process decisions (ODD ledger)
 
 - **TDD mode**: disabled. Source: ODD default — no project/session TDD config exists and the user made no TDD choice (strict TDD is bound to the SDD cycle in this harness). Ordinary checks: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`. Forwarded to every implementation delegation.
-- **RDD ledger**: T1 — no assess run (process debt; scaffold-only candidate, placeholder entry). T2 — assess `unassessable` (native schema failure, no diagnostic) → treated high → native review started at base `53fa3fd` (committed range) → tier medium, lens review-reliability → **approved** → acknowledged, authority burned. Last reviewed boundary: `34475cd`.
-- **Delivery ledger**: forecast ≈ 2,400 authored lines total (T1–T8, generated files excluded). Running count: T1 ≈ 150 + T2 = 508 → **≈ 658** (crossed the ~400 budget at T2). Strategy `ask-on-risk` (default): chain strategy answered at T2 close — **stacked-to-main**. Slices: PR 1 = T1–T4 (scaffold + discovery/path-safety/scripts core), PR 2 = T5–T6 (Pi adapter), PR 3 = T7–T8 (integration tests + packaging). Push, PR creation, and merges remain user decisions.
+- **RDD ledger**: T1 — no assess run (process debt; scaffold-only candidate, placeholder entry). T2 — assess `unassessable` (native schema failure, no diagnostic) → treated high → native review started at base `53fa3fd` (committed range) → tier medium, lens review-reliability → **approved** → acknowledged, authority burned. T3 — assess `unassessable` again (persistent native-side failure) → native review at base `34475cd` → tier medium, lens review-reliability → **approved** → acknowledged, burned. Last reviewed boundary: `3a68a33`.
+- **Delivery ledger**: forecast ≈ 2,400 authored lines total (T1–T8, generated files excluded). Running count: T1 ≈ 150 + T2 = 508 + T3 = 109 → **≈ 767**. Strategy `ask-on-risk` (default): chain strategy answered at T2 close — **stacked-to-main**. Slices: PR 1 = T1–T4 (scaffold + discovery/path-safety/scripts core), PR 2 = T5–T6 (Pi adapter), PR 3 = T7–T8 (integration tests + packaging). Push, PR creation, and merges remain user decisions.
