@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning complete. Design decisions locked (below). T1–T3 done (see Evidence log); T4–T8 pending.
+Planning complete. Design decisions locked (below). T1–T4 done (see Evidence log); T5–T8 pending.
 
 ## Source
 
@@ -86,7 +86,7 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
       ladder. Port `fs-walk/parse/skill-store/match` unit tests.
 - [x] **T3 Core: path safety** — `resolveSafeSkillFilePath` port + traversal matrix
       (`../`, backslash, absolute, null byte, symlink escape; traversal vs not_found distinction).
-- [ ] **T4 Core: scripts + risk** — exec-bit/shebang registry, risk scanner (4 categories),
+- [x] **T4 Core: scripts + risk** — exec-bit/shebang registry, risk scanner (4 categories),
       arg escaper. Port category matrix + escaping tests.
 - [ ] **T5 Pi adapter: tools** — three `registerTool`s; spawn shell w/ AbortSignal kill; timeout;
       cwd/absolute-command invariants; risk approval via `ctx.ui` (fail-closed without UI);
@@ -102,6 +102,8 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 ## Open items (not blockers)
 
 - **R3-001 follow-up (advisory, non-blocking)**: T2 review flagged `src/core/store.ts:35-39` (`ensure` — TTL/in-flight caching) and T3 review flagged `src/core/path-safety.ts:20` (lexical containment check), both reliability WARNING / informational. No corrections opened; reviews stand approved. Revisit both when wiring T5.
+- **BLOCKED native review (T4 candidate)**: lineage `review-ad141ea0d8f05fc7` (tier high, 4 lenses) stuck at collect — both capture routes reject provider-issued bindings (Engram obs 7170). Open lineage may block future review starts on this target; resolve (gentle-ai sync + fresh retry, maintainer inspection, or clone-scope RDD disable) before T5's review.
+- **PR slice 1 complete**: T1–T4 done (~901 authored lines). Per stacked-to-main, PR 1 can be opened on user decision.
 
 - Verify Codex skills layout (`~/.codex/skills`?) once Codex CLI is present; roots are config-driven.
 - npm publish + package distribution: user decision after T8.
@@ -114,9 +116,10 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 | T1 Scaffold | `53fa3fd` | 2026-09-29 | worker: all 5 gates green; verify: clean-room `pnpm install` exit 0 (after `allowBuilds` fix), test 1/1, typecheck/lint clean, rolldown build emits ESM `dist/extension.js`; 11 structural checks PASS (independent gentle-ai-verify) |
 | T2 Discovery core | `34475cd` | 2026-09-29 | worker ×2 (impl + 4 source-fidelity alignments); verify PASS ×2 — 20/20 tests, gates green, port fidelity vs source confirmed; native review (RDD): assess unassessable → started at base 53fa3fd; tier medium, lens review-reliability; **approved**, acknowledged, authority burned; advisory R3-001 (store.ts:35-39, informational) |
 | T3 Path safety | `3a68a33` | 2026-09-29 | worker 1 round; verify PASS — 26/26 tests, gates green, fidelity confirmed (one benign hardening divergence: root path.resolve), traversal matrix complete, security reasoning check passed; native review (RDD): assess unassessable → started at base 34475cd; tier medium, lens review-reliability; **approved**, acknowledged, authority burned; advisory R3-001 (path-safety.ts:20, informational) |
+| T4 Scripts + risk | `c00d3c6` | 2026-09-29 | worker 1 round; verify PASS — 30/30 tests, gates green, regex fidelity mechanical-extraction PASS, escape safety by construction, accepted divergence (win32 fail-closed); native review (RDD): assess **high** (shell_process) → started at base 3a68a33, tier high, 4 lenses → **capture route FAILED** (group + single, byte-verified bindings; Engram obs 7170) → review BLOCKED, lineage `review-ad141ea0d8f05fc7` left open in reviewing state; fallback evidence = independent verifier PASS |
 
 ## Process decisions (ODD ledger)
 
 - **TDD mode**: disabled. Source: ODD default — no project/session TDD config exists and the user made no TDD choice (strict TDD is bound to the SDD cycle in this harness). Ordinary checks: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`. Forwarded to every implementation delegation.
-- **RDD ledger**: T1 — no assess run (process debt; scaffold-only candidate, placeholder entry). T2 — assess `unassessable` (native schema failure, no diagnostic) → treated high → native review started at base `53fa3fd` (committed range) → tier medium, lens review-reliability → **approved** → acknowledged, authority burned. T3 — assess `unassessable` again (persistent native-side failure) → native review at base `34475cd` → tier medium, lens review-reliability → **approved** → acknowledged, burned. Last reviewed boundary: `3a68a33`.
-- **Delivery ledger**: forecast ≈ 2,400 authored lines total (T1–T8, generated files excluded). Running count: T1 ≈ 150 + T2 = 508 + T3 = 109 → **≈ 767**. Strategy `ask-on-risk` (default): chain strategy answered at T2 close — **stacked-to-main**. Slices: PR 1 = T1–T4 (scaffold + discovery/path-safety/scripts core), PR 2 = T5–T6 (Pi adapter), PR 3 = T7–T8 (integration tests + packaging). Push, PR creation, and merges remain user decisions.
+- **RDD ledger**: T1 — no assess run (process debt; scaffold-only candidate, placeholder entry). T2 — assess `unassessable` (native schema failure, no diagnostic) → treated high → native review started at base `53fa3fd` (committed range) → tier medium, lens review-reliability → **approved** → acknowledged, authority burned. T3 — assess `unassessable` again (persistent native-side failure) → native review at base `34475cd` → tier medium, lens review-reliability → **approved** → acknowledged, burned. T4 — assess **high** (process_boundary shell_process) → native review at base `3a68a33`, tier high, 4 lenses → capture route failure → **BLOCKED** (obs 7170). Last reviewed boundary: `3a68a33` (T4 unreviewed natively; independent verifier PASS stands as fallback).
+- **Delivery ledger**: forecast ≈ 2,400 authored lines total (T1–T8, generated files excluded). Running count: T1 ≈ 150 + T2 = 508 + T3 = 109 + T4 = 134 → **≈ 901**. Strategy `ask-on-risk` (default): chain strategy answered at T2 close — **stacked-to-main**. Slices: PR 1 = T1–T4 (scaffold + discovery/path-safety/scripts core), PR 2 = T5–T6 (Pi adapter), PR 3 = T7–T8 (integration tests + packaging). Push, PR creation, and merges remain user decisions.
