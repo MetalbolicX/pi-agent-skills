@@ -102,7 +102,7 @@ alongside behavior, Conventional Commit message, commit hash recorded below as e
 ## Open items (not blockers)
 
 - **R3-001 follow-up (advisory, non-blocking)**: T2 review flagged `src/core/store.ts:35-39` (`ensure` — TTL/in-flight caching) and T3 review flagged `src/core/path-safety.ts:20` (lexical containment check), both reliability WARNING / informational. No corrections opened; reviews stand approved. Revisit both when wiring T5.
-- **BLOCKED native review (T4 candidate)**: lineage `review-ad141ea0d8f05fc7` (tier high, 4 lenses) stuck at collect — both capture routes reject provider-issued bindings (Engram obs 7170). Open lineage may block future review starts on this target; resolve (gentle-ai sync + fresh retry, maintainer inspection, or clone-scope RDD disable) before T5's review.
+- **BLOCKED native review (T4 candidate)**: lineage `review-ad141ea0d8f05fc7` (tier high, 4 lenses) stuck at collect — both capture routes reject provider-issued bindings (Engram obs 7170). Remedy `gentle-ai sync` + single retry attempted 2026-09-29 (user-approved): **still rejected**. Open lineage may block future review starts on this target; remaining options: maintainer inspection or clone-scope RDD disable before T5's review.
 - **PR slice 1 complete**: T1–T4 done (~901 authored lines). Per stacked-to-main, PR 1 can be opened on user decision.
 
 - Verify Codex skills layout (`~/.codex/skills`?) once Codex CLI is present; roots are config-driven.
