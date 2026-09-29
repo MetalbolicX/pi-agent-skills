@@ -1,0 +1,35 @@
+{
+  "name": "pi-agent-skills",
+  "version": "0.1.0",
+  "description": "Pi extension filling skill gaps: path-safe skill file reads, confined skill script execution, cross-harness skill discovery (.claude/.codex/.opencode folders)",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "keywords": ["pi-package"],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@types/node": "^24",
+    "oxlint": "^1",
+    "rolldown": "^1.2.4",
+    "tsx": "^4.23.12",
+    "typebox": "^1.3.27",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "test": "node --test --import tsx",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "build": "rolldown -c"
+  },
+  "pi": {
+    "extensions": ["./dist/extension.js"]
+  },
+  "files": ["dist", "README.md", "LICENSE"]
+}
