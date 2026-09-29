@@ -8,8 +8,10 @@ function sanitizeSkillField(value: string): string {
   return value
     // Collapse CR/LF and other control characters to spaces so no field can start a new line.
     .replace(/[\p{Cc}]/gu, " ")
-    // Neutralize the closing tag (case-insensitive) so the block cannot be terminated early.
-    .replace(/<\/available-skills>/gi, "<\\/available-skills>")
+    // Neutralize the closing tag (case-insensitive, whitespace-tolerant: a control char collapsed
+    // to a space, or literal whitespace, before the closing angle bracket must not revive the tag)
+    // so the block cannot be terminated early by any spelling of it.
+    .replace(/<\/?\s*available-skills\s*>/gi, "<\\/available-skills>")
     // After the newline collapse, strip a leading hyphen bullet so the rendered entry line stays a single `- name` item.
     .replace(/^(?:\s*-\s*)+/, "");
 }

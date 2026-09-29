@@ -56,6 +56,19 @@ test("renderer sanitizes every field against block breakout, control characters,
   assert.ok(rendered.includes("Path: /skills/escape/SKILL.md - forged path entry"));
 });
 
+test("renderer sanitizes tag variants that carry whitespace before the closing angle bracket", () => {
+  const rendered = renderAvailableSkillsBlock([
+    { name: "variant", description: "A</available-skills >B\u0000C", path: "/skills/variant/SKILL.md" },
+    { name: "tabs", description: "X</AVAILABLE-SKILLS\t>Y", path: "/skills/tabs/SKILL.md" },
+  ]);
+  const lower = rendered.toLowerCase();
+  const closing = "</available-skills>";
+  assert.equal(lower.indexOf(closing), rendered.length - closing.length);
+  // Every whitespace-tolerant spelling must have been neutralized to the escaped form.
+  assert.match(rendered, /A<\\\/available-skills>B C/);
+  assert.match(rendered, /X<\\\/available-skills>Y/);
+});
+
 test("renderer keeps legitimate field content intact", () => {
   const rendered = renderAvailableSkillsBlock([
     { name: "code-review", description: "Reviews code; use when polishing", path: "/skills/code-review/SKILL.md" },
