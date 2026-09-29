@@ -2,10 +2,22 @@ import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import type { Skill, SkillRoot, SkillStore } from "../core/types.js";
 
+// Skill fields come from attacker-editable SKILL.md files; they must never break out of the
+// <available-skills> block or forge new top-level entries in the rendered system prompt.
+function sanitizeSkillField(value: string): string {
+  return value
+    // Collapse CR/LF and other control characters to spaces so no field can start a new line.
+    .replace(/[\p{Cc}]/gu, " ")
+    // Neutralize the closing tag (case-insensitive) so the block cannot be terminated early.
+    .replace(/<\/available-skills>/gi, "<\\/available-skills>")
+    // After the newline collapse, strip a leading hyphen bullet so the rendered entry line stays a single `- name` item.
+    .replace(/^(?:\s*-\s*)+/, "");
+}
+
 export function renderAvailableSkillsBlock(summaries: readonly Pick<Skill, "name" | "description" | "path">[]): string {
   if (summaries.length === 0) return "";
   const entries = summaries.map(({ name, description, path: skillPath }) =>
-    `- ${name}\n  Description: ${description}\n  Path: ${skillPath}`,
+    `- ${sanitizeSkillField(name)}\n  Description: ${sanitizeSkillField(description)}\n  Path: ${sanitizeSkillField(skillPath)}`,
   ).join("\n");
   return `<available-skills>\n${entries}\n\nThese skills come from folders Pi does not index natively (.claude/.codex/.opencode user and project scopes, and ~/.config/opencode/skills). Use get_available_skills to list them, read_skill_file to read their files, and run_skill_script to run their registered scripts.\n</available-skills>`;
 }
