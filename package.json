@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Pi extension filling skill gaps: path-safe skill file reads, confined skill script execution, cross-harness skill discovery (.claude/.codex/.opencode folders)",
   "type": "module",
+  "bin": {
+    "pi-skills": "dist/cli.mjs"
+  },
   "license": "MIT",
   "private": false,
   "engines": {
