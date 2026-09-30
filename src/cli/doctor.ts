@@ -83,7 +83,7 @@ export async function doctor(options: DoctorOptions = {}): Promise<number> {
     io.stdout(`— registry latest: ${latest ?? "unknown"}`);
     const installed = await readPackageVersion(npmStore);
     for (const { entry } of npmEntries) {
-      if (latest && installed !== "unknown" && isStale(installed, latest)) {
+      if (latest && (entry.version ? isStale(entry.version, latest) : installed !== "unknown" && isStale(installed, latest))) {
         io.stdout(entry.version
           ? `warning: pinned at ${entry.version}; registry confirms ${latest} is newer — run pi-skills install -v ${latest}`
           : "stale: run pi-skills update");

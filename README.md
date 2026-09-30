@@ -25,6 +25,24 @@ pi -e ./dist/extension.js
 
 Use `/reload` in Pi to reload the extension after changes.
 
+## pi-skills CLI
+
+The package ships a `pi-skills` bin for the install lifecycle; run it with `npx pi-skills` without a global install.
+
+| Command | Behavior |
+|---|---|
+| `pi-skills install [-v <ver>] [--latest] [--local]` | `-v` pins a version; `--latest` is the documented alias for the default unpinned spec; `--local` writes project scope. |
+| `pi-skills uninstall [--purge] [--local]` | `--purge` clears the guarded npm-store copy and prints the `pi update --extensions` reconcile hint. |
+| `pi-skills update` | Pinned entries only print a hint: `pi update` never moves a configured pin. Local installs track the working tree. |
+| `pi-skills status` | Read-only probe of both scopes, including registry staleness. |
+| `pi-skills doctor` | Runs health checks; exits 1 on structural issues. |
+
+`PI_SKILLS_AGENT_DIR` overrides the agent directory for sandboxing and testing. `PI_SKILLS_DEBUG` enables extension debug logging (see Configuration).
+
+Staleness compares only the numeric semver core; prerelease suffixes are stripped. For example, installed `0.2.0-beta.1` compares equal to `0.2.0`.
+
+All mutations delegate to the `pi` CLI (`pi install`, `pi remove`, and `pi update`); `pi-skills` never writes `settings.json` itself.
+
 ## Configuration
 
 - `PI_SKILLS_ROOTS` — colon-separated custom roots replacing the default roots.

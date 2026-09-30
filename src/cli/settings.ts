@@ -46,7 +46,10 @@ export async function loadSettings(scopeOrPath: SettingsScope | string, options:
   } catch (error) {
     return { path: settingsPath, exists: true, parseError: errorMessage(error), packages: [] };
   }
-  const hasPackages = parsed !== null && typeof parsed === "object" && "packages" in parsed;
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { path: settingsPath, exists: true, shapeError: "settings root is not a JSON object", packages: [] };
+  }
+  const hasPackages = "packages" in parsed;
   const packages = hasPackages ? (parsed as { packages?: unknown }).packages : undefined;
   if (hasPackages && !Array.isArray(packages)) {
     return { path: settingsPath, exists: true, shapeError: '"packages" must be an array', packages: [] };

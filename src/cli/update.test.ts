@@ -29,12 +29,12 @@ const latest: typeof fetch = async () => ({ ok: true, json: async () => ({ versi
 test("updates unpinned personal and project entries with scope-specific argv; explains local entries", async () => fixture(async (root) => {
   const agentDir = path.join(root, "agent"); const repo = path.join(root, "repo");
   setSettings(path.join(agentDir, "settings.json"), ["npm:pi-agent-skills"]);
-  setSettings(path.join(repo, ".pi", "settings.json"), ["npm:pi-agent-skills", "../local"]);
+  setSettings(path.join(repo, ".pi", "settings.json"), ["git:github.com/example/pi-agent-skills.git", "../local"]);
   mkdirSync(path.join(repo, "local")); writeFileSync(path.join(repo, "local", "package.json"), JSON.stringify({ name: "pi-agent-skills" }));
   const fake = fakePi(root); const out = output();
   try {
     assert.equal(await update({ agentDir, cwd: repo, repoRoot: repo, fetch: latest, io: out.io }), 0);
-    assert.deepEqual(readFileSync(fake.record, "utf8").trim().split("\n"), ["update npm:pi-agent-skills", "update npm:pi-agent-skills --local"]);
+    assert.deepEqual(readFileSync(fake.record, "utf8").trim().split("\n"), ["update npm:pi-agent-skills", "update git:github.com/example/pi-agent-skills.git --local"]);
     assert.ok(out.stdout.some((line) => line.includes("tracks the working tree; nothing to fetch")));
   } finally { fake.restore(); }
 }));

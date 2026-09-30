@@ -72,6 +72,28 @@ test("node version threshold is injectable and stale registry results only warn"
   assert.ok(newer.stdout.includes("stale: run pi-skills update"));
 }));
 
+test("pinned staleness follows the pin, while unpinned staleness follows the installed version", async () => fixture(async (root) => {
+  const { agentDir, repo, store } = setup(root, ["npm:pi-agent-skills@0.1.0"]);
+  writeJson(path.join(store, "package.json"), { name: "pi-agent-skills", version: "0.1.0" });
+  const pinned = capture();
+  assert.equal(await doctor({ agentDir, cwd: repo, fetch: async () => ({ ok: true, json: async () => ({ version: "0.2.0" }) } as Response), io: pinned.io }), 0);
+  assert.ok(pinned.stdout.some((line) => line === "warning: pinned at 0.1.0; registry confirms 0.2.0 is newer — run pi-skills install -v 0.2.0"));
+
+  writeJson(path.join(agentDir, "settings.json"), { packages: ["npm:pi-agent-skills"] });
+  writeJson(path.join(store, "package.json"), { name: "pi-agent-skills", version: "0.3.0" });
+  const drifted = capture();
+  assert.equal(await doctor({ agentDir, cwd: repo, fetch: async () => ({ ok: true, json: async () => ({ version: "0.2.0" }) } as Response), io: drifted.io }), 0);
+  assert.equal(drifted.stdout.some((line) => line.startsWith("stale:")), false);
+}));
+
+test("unreadable installed version still reports a stale pin", async () => fixture(async (root) => {
+  const { agentDir, repo, store } = setup(root, ["npm:pi-agent-skills@0.1.0"]);
+  rmSync(path.join(store, "package.json"));
+  const out = capture();
+  assert.equal(await doctor({ agentDir, cwd: repo, fetch: async () => ({ ok: true, json: async () => ({ version: "0.2.0" }) } as Response), io: out.io }), 0);
+  assert.ok(out.stdout.some((line) => line === "warning: pinned at 0.1.0; registry confirms 0.2.0 is newer — run pi-skills install -v 0.2.0"));
+}));
+
 test("pinned entries report confirmed-current and unreachable variants without failing", async () => fixture(async (root) => {
   const { agentDir, repo } = setup(root, ["npm:pi-agent-skills@1.0.0"]);
   const currentOutput = capture();
