@@ -4,6 +4,8 @@ import { pathToFileURL } from "node:url";
 import { DEBUG, debug } from "./debug.js";
 import { install } from "./install.js";
 import { uninstall } from "./uninstall.js";
+import { status } from "./status.js";
+import { update } from "./update.js";
 
 export const USAGE = `Usage: pi-skills <command> [options]
 
@@ -11,7 +13,7 @@ Commands:
   install    Install pi-agent-skills
   uninstall  Uninstall pi-agent-skills
   update     Update pi-agent-skills
-  status     Show installation status
+  status     Show installed versions and registry status
   doctor     Check installation health
 
 Global options:
@@ -113,9 +115,12 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
     debug(io.stderr, `command: ${parsed.command}`);
   }
 
+  const agentDir = io.env.PI_SKILLS_AGENT_DIR;
   if (parsed.command === "status") {
-    io.stdout("pi-skills status: probe lands in T4");
-    return 0;
+    return status({ agentDir, env: io.env, io });
+  }
+  if (parsed.command === "update") {
+    return update({ dryRun: parsed.options.dryRun, agentDir, env: io.env, io });
   }
 
   if (parsed.command === "install") {
@@ -124,6 +129,7 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
       local: parsed.options.local,
       version: parsed.options.version,
       latest: parsed.options.latest,
+      agentDir,
       io,
     });
   }
@@ -132,6 +138,7 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
       dryRun: parsed.options.dryRun,
       local: parsed.options.local,
       purge: parsed.options.purge,
+      agentDir,
       io,
     });
   }

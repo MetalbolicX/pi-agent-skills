@@ -14,6 +14,7 @@ export interface InstallOptions {
   local?: boolean;
   dryRun?: boolean;
   version?: string;
+  /** Documented alias for the unpinned install; T5 documents --latest in the README. */
   latest?: boolean;
   agentDir?: string;
   cwd?: string;
@@ -28,7 +29,7 @@ const defaultIo: FlowIo = {
 
 export async function install(options: InstallOptions = {}): Promise<number> {
   const io = options.io ?? defaultIo;
-  const agentDir = options.agentDir ?? path.join(homedir(), ".pi", "agent");
+  const agentDir = options.agentDir ?? process.env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
   const scope = options.local ? "project" : "personal";
   const settings = await loadSettings(scope, { agentDir, cwd: options.cwd, repoRoot: options.repoRoot });
   let matching: Awaited<ReturnType<typeof findMatchingEntries>>["entries"] = [];

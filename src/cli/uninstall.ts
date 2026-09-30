@@ -24,7 +24,7 @@ const defaultIo: FlowIo = {
 
 export async function uninstall(options: UninstallOptions = {}): Promise<number> {
   const io = options.io ?? defaultIo;
-  const agentDir = options.agentDir ?? path.join(homedir(), ".pi", "agent");
+  const agentDir = options.agentDir ?? process.env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
   const settings = await loadSettings(options.local ? "project" : "personal", { agentDir, cwd: options.cwd, repoRoot: options.repoRoot });
   if (settings.parseError) {
     io.stderr(`pi-skills: could not read settings (${settings.path}): ${settings.parseError}`);
@@ -37,6 +37,7 @@ export async function uninstall(options: UninstallOptions = {}): Promise<number>
   }
   if (matches.entries.length === 0) {
     io.stdout("✓ Not installed");
+    if (options.purge) purgeStore(agentDir, options.dryRun ?? false, io);
     return 0;
   }
 
@@ -55,24 +56,26 @@ export async function uninstall(options: UninstallOptions = {}): Promise<number>
   }
   if (removed > 0) io.stdout(`✓ Uninstalled ${removed} entries`);
 
-  if (options.purge && removed > 0) {
-    const storePath = resolveNpmStorePath(agentDir);
-    if (options.dryRun) {
-      if (existsSync(storePath)) {
-        if (isGuardedStorePath(storePath, agentDir)) io.stdout(`[dry-run] Would purge ${storePath}`);
-        else io.stderr(`pi-skills: refusing to purge unsafe package store path ${storePath}`);
-      }
-    } else if (existsSync(storePath)) {
-      if (isGuardedStorePath(storePath, agentDir)) {
-        rmSync(storePath, { recursive: true, force: true });
-        io.stdout(`✓ Purged ${storePath}`);
-        io.stdout("run pi update --extensions to reconcile the package store");
-      } else {
-        io.stderr(`pi-skills: refusing to purge unsafe package store path ${storePath}`);
-      }
-    }
-  }
+  if (options.purge && removed > 0) purgeStore(agentDir, options.dryRun ?? false, io);
   return failed ? 1 : 0;
+}
+
+function purgeStore(agentDir: string, dryRun: boolean, io: FlowIo): void {
+  const storePath = resolveNpmStorePath(agentDir);
+  if (!existsSync(storePath)) {
+    io.stdout("nothing to purge");
+    return;
+  }
+  if (!isGuardedStorePath(storePath, agentDir)) {
+    io.stderr(`pi-skills: refusing to purge unsafe package store path ${storePath}`);
+    return;
+  }
+  if (dryRun) io.stdout(`[dry-run] Would purge ${storePath}`);
+  else {
+    rmSync(storePath, { recursive: true, force: true });
+    io.stdout(`✓ Purged ${storePath}`);
+    io.stdout("run pi update --extensions to reconcile the package store");
+  }
 }
 
 function isGuardedStorePath(targetPath: string, agentDir: string): boolean {

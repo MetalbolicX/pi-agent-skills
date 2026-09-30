@@ -145,3 +145,23 @@ test("dry-run prints removals and guarded purge without spawning or deleting", a
     } finally { console.log = oldLog; fake.restore(); }
   });
 });
+
+test("purge with no matches removes an existing guarded store and reports it", async () => {
+  await fixture(async (root) => {
+    const agentDir = path.join(root, "agent"); personalSettings(agentDir, []);
+    const store = path.join(agentDir, "npm", "node_modules", "pi-agent-skills"); mkdirSync(store, { recursive: true });
+    const out = output();
+    assert.equal(await uninstall({ agentDir, purge: true, io: out.io }), 0);
+    assert.equal(existsSync(store), false);
+    assert.deepEqual(out.stdout, ["✓ Not installed", `✓ Purged ${store}`, "run pi update --extensions to reconcile the package store"]);
+  });
+});
+
+test("purge with no matches reports when there is nothing to purge", async () => {
+  await fixture(async (root) => {
+    const agentDir = path.join(root, "agent"); personalSettings(agentDir, []);
+    const out = output();
+    assert.equal(await uninstall({ agentDir, purge: true, io: out.io }), 0);
+    assert.deepEqual(out.stdout, ["✓ Not installed", "nothing to purge"]);
+  });
+});
