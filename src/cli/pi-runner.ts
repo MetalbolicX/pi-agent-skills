@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { DEBUG, debug } from "./debug.js";
 
 export interface RunPiOptions {
   argv: string[];
@@ -15,8 +16,6 @@ export interface RunPiResult {
   error?: string;
 }
 
-const DEBUG = /^(1|true|yes|on)$/i;
-
 export function runPi({ argv, timeoutMs = 30_000, dryRun = false, capture = false }: RunPiOptions): Promise<RunPiResult> {
   if (dryRun) {
     console.log(`[dry-run] Would run: pi ${argv.join(" ")}`);
@@ -24,7 +23,7 @@ export function runPi({ argv, timeoutMs = 30_000, dryRun = false, capture = fals
   }
 
   if (DEBUG.test(process.env.PI_SKILLS_DEBUG?.trim() ?? "")) {
-    console.error(`[pi-skills] spawning: pi ${argv.join(" ")}`);
+    debug(console.error, `spawning: pi ${argv.join(" ")}`);
   }
 
   return new Promise((resolve) => {

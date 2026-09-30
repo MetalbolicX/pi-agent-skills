@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
 import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { DEBUG, debug } from "./debug.js";
 
 export const USAGE = `Usage: pi-skills <command> [options]
 
@@ -41,8 +42,6 @@ export interface ParsedCliArgs {
 }
 
 const COMMANDS: readonly Command[] = ["install", "uninstall", "update", "status", "doctor"];
-const DEBUG = /^(1|true|yes|on)$/i;
-
 export function parseCliArgs(args: string[]): ParsedCliArgs {
   if (args.length === 0) throw new Error("No command provided");
 
@@ -109,7 +108,7 @@ export function runCli(args: string[], io: CliIo = defaultIo): number {
   }
 
   if (DEBUG.test(io.env.PI_SKILLS_DEBUG?.trim() ?? "")) {
-    io.stderr(`[pi-skills] command: ${parsed.command}`);
+    debug(io.stderr, `command: ${parsed.command}`);
   }
 
   if (parsed.command === "status") {
