@@ -35,6 +35,11 @@ test("matches git repository basename with refs and .git suffix, not prefixes", 
     assert.equal((await matched(source))?.kind, "git", source);
   }
   assert.equal(await matched("git:github.com/x/pi-agent-skills-something"), undefined);
+  const plain = await matched("git:github.com/x/pi-agent-skills");
+  const suffixed = await matched("git:github.com/x/pi-agent-skills.git");
+  assert.equal(plain?.kind, "git");
+  assert.equal(suffixed?.kind, "git");
+  if (plain?.kind === "git" && suffixed?.kind === "git") assert.equal(plain.identity, suffixed.identity);
 });
 
 test("resolves local paths relative to settings, supports absolute paths, and checks package identity", async () => {
@@ -55,7 +60,20 @@ test("resolves local paths relative to settings, supports absolute paths, and ch
     mkdirSync(other);
     writeFileSync(path.join(other, "package.json"), JSON.stringify({ name: "another-package" }));
     assert.equal((await matchEntry(entry(other), settings))?.kind, "unmatched-local");
-    assert.equal((await matchEntry(entry(path.join(root, "unreadable")), settings))?.kind, "unmatched-local");
+    const unmatched = await matchEntry(entry(path.join(root, "unreadable")), settings);
+    assert.equal(unmatched?.kind, "unmatched-local");
+    if (unmatched?.kind === "unmatched-local") assert.ok(unmatched.cause);
+  });
+});
+
+test("expands local tilde paths against the injectable home directory", async () => {
+  await withFixture(async (root) => {
+    const home = path.join(root, "home");
+    const local = path.join(home, "package");
+    mkdirSync(local, { recursive: true });
+    writeFileSync(path.join(local, "package.json"), JSON.stringify({ name: "pi-agent-skills" }));
+    const result = await matchEntry(entry("~/package"), path.join(root, "settings.json"), { homeDir: home });
+    assert.equal(result?.kind, "local");
   });
 });
 

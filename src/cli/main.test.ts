@@ -12,30 +12,30 @@ function io() {
   };
 }
 
-test("dispatches every known subcommand", () => {
-  for (const command of ["install", "uninstall", "update", "doctor"] as const) {
+test("dispatches every known subcommand", async () => {
+  for (const command of ["update", "doctor"] as const) {
     const output = io();
-    assert.equal(runCli([command], output.deps), 1);
+    assert.equal(await runCli([command], output.deps), 1);
     assert.deepEqual(output.stderr, [`${command}: implemented in a later work unit`]);
   }
   const status = io();
-  assert.equal(runCli(["status"], status.deps), 0);
+  assert.equal(await runCli(["status"], status.deps), 0);
   assert.deepEqual(status.stdout, ["pi-skills status: probe lands in T4"]);
 });
 
-test("unknown flag, unknown command, and no args are usage errors", () => {
+test("unknown flag, unknown command, and no args are usage errors", async () => {
   for (const args of [["status", "--bogus"], ["bogus"], []]) {
     const output = io();
-    assert.equal(runCli(args, output.deps), 2);
+    assert.equal(await runCli(args, output.deps), 2);
     assert.ok(output.stderr[0]?.startsWith("pi-skills: "));
     assert.equal(output.stderr[1], USAGE);
     assert.deepEqual(output.stdout, []);
   }
 });
 
-test("help prints usage to stdout and succeeds", () => {
+test("help prints usage to stdout and succeeds", async () => {
   const output = io();
-  assert.equal(runCli(["--help"], output.deps), 0);
+  assert.equal(await runCli(["--help"], output.deps), 0);
   assert.deepEqual(output.stdout, [USAGE]);
   assert.deepEqual(output.stderr, []);
 });

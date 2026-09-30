@@ -2,20 +2,22 @@ import { readFile, realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import type { PackageEntry, Settings } from "./settings.js";
+import { PACKAGE_NAME } from "./constants.js";
 
-export const MATCHED_PACKAGE_NAME = "pi-agent-skills";
+export type IdentifiedPackageEntry = Exclude<PackageEntry, { kind: "malformed" }>;
 
 export interface MatchingEntry {
-  entry: PackageEntry;
+  entry: IdentifiedPackageEntry;
   kind: "npm" | "git" | "local";
   identity: string;
   version?: string;
 }
 
 export interface UnmatchedLocalEntry {
-  entry: PackageEntry;
+  entry: IdentifiedPackageEntry;
   kind: "unmatched-local";
   resolvedPath: string;
+  cause?: string;
 }
 
 export interface MatchResult {
@@ -24,7 +26,7 @@ export interface MatchResult {
   duplicates: Map<string, MatchingEntry[]>;
 }
 
-export async function matchEntry(entry: PackageEntry, settingsPath: string | undefined): Promise<MatchingEntry | UnmatchedLocalEntry | undefined> {
+export async function matchEntry(entry: PackageEntry, settingsPath: string | undefined, options: { homeDir?: string } = {}): Promise<MatchingEntry | UnmatchedLocalEntry | undefined> {
   const { kind: entryKind } = entry;
   if (entryKind === "malformed") return undefined;
   const { source } = entry;
@@ -35,7 +37,7 @@ export async function matchEntry(entry: PackageEntry, settingsPath: string | und
   if (!isLocalSource(source)) return undefined;
 
   const base = settingsPath ? path.dirname(settingsPath) : process.cwd();
-  const expanded = source.startsWith("~") ? path.join(homedir(), source.slice(1).replace(/^[/\\]/, "")) : source;
+  const expanded = source.startsWith("~") ? path.join(options.homeDir ?? homedir(), source.slice(1).replace(/^[/\\]/, "")) : source;
   const resolvedPath = path.resolve(path.isAbsolute(expanded) ? expanded : path.join(base, expanded));
   try {
     const packagePath = path.join(resolvedPath, "package.json");
@@ -43,12 +45,12 @@ export async function matchEntry(entry: PackageEntry, settingsPath: string | und
     const metadata: unknown = JSON.parse(contents);
     if (!metadata || typeof metadata !== "object") return { entry, kind: "unmatched-local", resolvedPath };
     const { name } = metadata as { name?: unknown };
-    if (name !== MATCHED_PACKAGE_NAME) {
+    if (name !== PACKAGE_NAME) {
       return { entry, kind: "unmatched-local", resolvedPath };
     }
     return { entry, kind: "local", identity: `local:${canonicalPath}` };
-  } catch {
-    return { entry, kind: "unmatched-local", resolvedPath };
+  } catch (error) {
+    return { entry, kind: "unmatched-local", resolvedPath, cause: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -73,7 +75,7 @@ function parseNpmSource(source: string): { name: string; version?: string } | un
   } else {
     name = spec.split("@")[0] ?? "";
   }
-  if (name !== MATCHED_PACKAGE_NAME && name !== `@scope/${MATCHED_PACKAGE_NAME}`) return undefined;
+  if (name !== PACKAGE_NAME && name !== `@scope/${PACKAGE_NAME}`) return undefined;
   const boundary = spec.slice(name.length);
   if (boundary !== "" && !boundary.startsWith("@")) return undefined;
   const version = boundary.startsWith("@") ? spec.slice(spec.lastIndexOf("@") + 1) : undefined;
@@ -86,7 +88,7 @@ function parseGitSource(source: string): string | undefined {
   const repoUrl = source.slice(4).replace(/@[^/@]*$/, "");
   const normalized = repoUrl.replace(/\.git$/i, "");
   const basename = normalized.split(/[\\/]/).at(-1);
-  return basename === MATCHED_PACKAGE_NAME ? repoUrl : undefined;
+  return basename === PACKAGE_NAME ? normalized : undefined;
 }
 
 function isLocalSource(source: string): boolean {

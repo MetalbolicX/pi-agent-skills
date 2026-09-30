@@ -1,8 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-
-export const PACKAGE_NAME = "pi-agent-skills";
+import { PACKAGE_NAME } from "./constants.js";
 
 export function resolvePersonalSettingsPath(agentDir: string = path.join(homedir(), ".pi", "agent")): string {
   return path.join(agentDir, "settings.json");
@@ -28,7 +27,7 @@ export function resolveProjectSettingsPath({ cwd, repoRoot, exists = existsSync 
     if (exists(settings)) return settings;
     if (current === resolvedRoot) return undefined;
     const parent = path.dirname(current);
-    if (parent === current || !parent.startsWith(`${resolvedRoot}${path.sep}`) && parent !== resolvedRoot) return undefined;
+    if (parent === current || (!parent.startsWith(`${resolvedRoot}${path.sep}`) && parent !== resolvedRoot)) return undefined;
     current = parent;
   }
 }

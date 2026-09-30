@@ -2,6 +2,8 @@ import { parseArgs } from "node:util";
 import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { DEBUG, debug } from "./debug.js";
+import { install } from "./install.js";
+import { uninstall } from "./uninstall.js";
 
 export const USAGE = `Usage: pi-skills <command> [options]
 
@@ -92,7 +94,7 @@ const defaultIo: CliIo = {
   env: process.env,
 };
 
-export function runCli(args: string[], io: CliIo = defaultIo): number {
+export async function runCli(args: string[], io: CliIo = defaultIo): Promise<number> {
   let parsed: ParsedCliArgs;
   try {
     parsed = parseCliArgs(args);
@@ -116,11 +118,29 @@ export function runCli(args: string[], io: CliIo = defaultIo): number {
     return 0;
   }
 
+  if (parsed.command === "install") {
+    return install({
+      dryRun: parsed.options.dryRun,
+      local: parsed.options.local,
+      version: parsed.options.version,
+      latest: parsed.options.latest,
+      io,
+    });
+  }
+  if (parsed.command === "uninstall") {
+    return uninstall({
+      dryRun: parsed.options.dryRun,
+      local: parsed.options.local,
+      purge: parsed.options.purge,
+      io,
+    });
+  }
+
   io.stderr(`${parsed.command}: implemented in a later work unit`);
   return 1;
 }
 
 const invoked = process.argv[1] ? realpathSync(process.argv[1]) : undefined;
 if (invoked && import.meta.url === pathToFileURL(invoked).href) {
-  process.exitCode = runCli(process.argv.slice(2));
+  process.exitCode = await runCli(process.argv.slice(2));
 }

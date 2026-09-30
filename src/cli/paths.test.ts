@@ -29,6 +29,18 @@ test("finds nearest project settings while respecting git repository root", () =
   });
 });
 
+test("honors an explicit repository root and rejects cwd outside it", () => {
+  fixture((root) => {
+    const repo = path.join(root, "repo");
+    const outside = path.join(root, "outside");
+    mkdirSync(path.join(repo, ".pi"), { recursive: true });
+    mkdirSync(outside);
+    writeFileSync(path.join(repo, ".pi", "settings.json"), "{}");
+    assert.equal(resolveProjectSettingsPath({ cwd: repo, repoRoot: repo }), path.join(repo, ".pi", "settings.json"));
+    assert.equal(resolveProjectSettingsPath({ cwd: outside, repoRoot: repo }), undefined);
+  });
+});
+
 test("does not walk above the repository root", () => {
   fixture((root) => {
     const parent = path.join(root, "parent");
