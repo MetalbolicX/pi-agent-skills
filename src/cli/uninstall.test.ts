@@ -165,3 +165,21 @@ test("purge with no matches reports when there is nothing to purge", async () =>
     assert.deepEqual(out.stdout, ["✓ Not installed", "nothing to purge"]);
   });
 });
+
+test("project-scope zero-match purge leaves the personal store untouched", async () => {
+  await fixture(async (root) => {
+    const agentDir = path.join(root, "agent");
+    personalSettings(agentDir, []);
+    const projectSettings = path.join(root, ".pi", "settings.json");
+    mkdirSync(path.dirname(projectSettings), { recursive: true });
+    writeFileSync(projectSettings, JSON.stringify({ packages: [] }));
+    const store = path.join(agentDir, "npm", "node_modules", "pi-agent-skills");
+    mkdirSync(store, { recursive: true });
+    writeFileSync(path.join(store, "package.json"), "{}");
+    const out = output();
+
+    assert.equal(await uninstall({ agentDir, local: true, purge: true, cwd: root, repoRoot: root, io: out.io }), 0);
+    assert.equal(existsSync(store), true);
+    assert.deepEqual(out.stdout, ["✓ Not installed", "pi-skills: nothing to purge in project scope"]);
+  });
+});

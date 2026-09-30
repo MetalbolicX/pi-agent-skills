@@ -37,7 +37,8 @@ export async function uninstall(options: UninstallOptions = {}): Promise<number>
   }
   if (matches.entries.length === 0) {
     io.stdout("✓ Not installed");
-    if (options.purge) purgeStore(agentDir, options.dryRun ?? false, io);
+    if (options.purge && options.local) io.stdout("pi-skills: nothing to purge in project scope");
+    else if (options.purge) purgeStore(agentDir, options.dryRun ?? false, io);
     return 0;
   }
 
