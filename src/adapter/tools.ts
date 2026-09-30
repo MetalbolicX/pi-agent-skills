@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import type { ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { TSchema } from "typebox";
+import { filterAdvertisedSkills } from "../core/discovery.js";
 import { resolveSafeSkillFilePath } from "../core/path-safety.js";
 import type { SkillRoot, SkillStore } from "../core/types.js";
 import type { AdapterConfig } from "./config.js";
@@ -30,9 +30,7 @@ export function getAvailableSkillsTool(deps: ToolDeps): ToolDefinition<typeof sk
     description: "List discovered skills and their summaries. Use this first when identifying a skill that can help with the user's task.",
     parameters: skillParams,
     async execute() {
-      const advertisedPaths = new Set(deps.advertisedRoots.map((root) => path.resolve(root.path)));
-      const skills = (await deps.store.all())
-        .filter((skill) => advertisedPaths.has(path.resolve(skill.root.path)))
+      const skills = filterAdvertisedSkills(await deps.store.all(), deps.advertisedRoots)
         .map(({ name, description, trigger }) => ({ name, description, ...(trigger === undefined ? {} : { trigger }) }));
       const warnings = deps.warnings ?? [];
       return result(JSON.stringify({ skills, warnings }, null, 2));

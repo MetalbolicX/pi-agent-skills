@@ -1,13 +1,13 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import type { RootsConfig, SkillRoot } from "./types.js";
+import type { RootsConfig, Skill, SkillRoot } from "./types.js";
 
 const DEPTH = 3;
 const extensionSources = [".claude", ".agents", ".codex", ".opencode"] as const;
 const ADVERTISED_SOURCES = new Set<SkillRoot["source"]>([".claude", ".codex", ".opencode", "opencode-config", "override"]);
 const isAdvertisedRoot = (root: SkillRoot): boolean => ADVERTISED_SOURCES.has(root.source);
 
-async function findGitRoot(cwd: string): Promise<string> {
+export async function findGitRoot(cwd: string): Promise<string> {
   let current = path.resolve(cwd);
   while (true) {
     try {
@@ -19,6 +19,11 @@ async function findGitRoot(cwd: string): Promise<string> {
       current = parent;
     }
   }
+}
+
+export function filterAdvertisedSkills(skills: readonly Skill[], advertisedRoots: readonly SkillRoot[]): Skill[] {
+  const advertisedPaths = new Set(advertisedRoots.map((root) => path.resolve(root.path)));
+  return skills.filter((skill) => advertisedPaths.has(path.resolve(skill.root.path)));
 }
 
 export async function getDefaultRoots(cwd: string, home: string): Promise<RootsConfig> {

@@ -1,5 +1,5 @@
-import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { filterAdvertisedSkills } from "../core/discovery.js";
 import type { DebugLogger } from "./config.js";
 import type { Skill, SkillRoot, SkillStore } from "../core/types.js";
 
@@ -28,8 +28,7 @@ export function renderAvailableSkillsBlock(summaries: readonly Pick<Skill, "name
 export function registerInjection(pi: ExtensionAPI, deps: { store: SkillStore; advertisedRoots: readonly SkillRoot[]; logger?: DebugLogger }): void {
   const logger = deps.logger ?? (() => {});
   pi.on("before_agent_start", async (event) => {
-    const advertisedPaths = new Set(deps.advertisedRoots.map((root) => path.resolve(root.path)));
-    const skills = (await deps.store.all()).filter((skill) => advertisedPaths.has(path.resolve(skill.root.path)));
+    const skills = filterAdvertisedSkills(await deps.store.all(), deps.advertisedRoots);
     const block = renderAvailableSkillsBlock(skills);
     if (block) {
       event.systemPromptOptions.sections["available-skills"] = block;

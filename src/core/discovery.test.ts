@@ -3,8 +3,8 @@ import { mkdtemp, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { after, test } from "node:test";
-import { getDefaultRoots, rootsFromList } from "./discovery.js";
-import type { SkillRoot } from "./types.js";
+import { filterAdvertisedSkills, getDefaultRoots, rootsFromList } from "./discovery.js";
+import type { Skill, SkillRoot } from "./types.js";
 
 const temp = await mkdtemp(path.join(tmpdir(), "pi-skills-roots-"));
 after(async () => rm(temp, { recursive: true, force: true }));
@@ -28,6 +28,31 @@ test("advertises only extension roots when composing a mixed root list", () => {
   const config = rootsFromList([root("native"), root(".agents"), root(".claude"), root(".codex"), root(".opencode"), root("opencode-config"), root("override")]);
   assert.deepEqual(config.advertised.map((item) => item.source), [".claude", ".codex", ".opencode", "opencode-config", "override"]);
   assert.equal(config.all.length, 7);
+});
+
+test("filters skills by resolved advertised roots, including overrides but excluding native roots", () => {
+  const root = (rootPath: string, source: SkillRoot["source"]): SkillRoot => ({ path: rootPath, scope: "project", source, maxDepth: 3 });
+  const skill = (name: string, skillRoot: SkillRoot): Skill => ({
+    name,
+    description: `${name} description`,
+    path: path.join(skillRoot.path, name, "SKILL.md"),
+    skillDir: path.join(skillRoot.path, name),
+    root: skillRoot,
+    scope: skillRoot.scope,
+    relativePath: name,
+  });
+  const base = path.join(temp, "filter-roots");
+  const advertised = root(path.join(base, "claude"), ".claude");
+  const override = root(path.join(base, "override"), "override");
+  const native = root(path.join(base, "native"), "native");
+  const matchingSkill = skill("advertised", root(`${base}${path.sep}nested${path.sep}..${path.sep}claude${path.sep}`, ".claude"));
+  const overrideSkill = skill("override", override);
+  const nativeSkill = skill("native", native);
+
+  assert.deepEqual(
+    filterAdvertisedSkills([matchingSkill, overrideSkill, nativeSkill], [advertised, override]).map(({ name }) => name),
+    ["advertised", "override"],
+  );
 });
 
 test("uses cwd when no git root exists", async () => {
