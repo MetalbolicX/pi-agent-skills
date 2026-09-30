@@ -1,6 +1,7 @@
 import * as os from "node:os";
+import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { parseConfig } from "./adapter/config.js";
+import { createDebugLogger, parseConfig } from "./adapter/config.js";
 import { getToolRoots } from "./adapter/roots.js";
 import { createSkillStore } from "./core/store.js";
 import { getAvailableSkillsTool, readSkillFileTool, runSkillScriptTool } from "./adapter/tools.js";
@@ -10,6 +11,7 @@ interface Deps {
   cwd: string;
   home: string;
   env: Record<string, string | undefined>;
+  warn?: (line: string) => void;
 }
 
 function defaultDeps(): Deps {
@@ -18,15 +20,20 @@ function defaultDeps(): Deps {
 
 function activate(pi: ExtensionAPI, deps: Deps): Promise<void> {
   const config = parseConfig(deps.env);
+  const logger = createDebugLogger(config.debug, deps.warn);
   const warnings: string[] = [];
   return (async () => {
     const roots = await getToolRoots(deps.cwd, deps.home, config.roots);
+    const resolvedRoots = roots.all.map((root) => path.resolve(root.path));
+    logger(`discovered ${resolvedRoots.length} roots: ${resolvedRoots.join(", ")}`);
     const store = createSkillStore(roots.all, undefined, (warning) => warnings.push(warning));
     const toolDeps = { store, config, warnings, advertisedRoots: roots.advertised };
     pi.registerTool(getAvailableSkillsTool(toolDeps));
     pi.registerTool(readSkillFileTool(toolDeps));
     pi.registerTool(runSkillScriptTool(toolDeps));
-    registerInjection(pi, { store, advertisedRoots: roots.advertised });
+    logger("registered tools: get_available_skills, read_skill_file, run_skill_script");
+    registerInjection(pi, { store, advertisedRoots: roots.advertised, logger });
+    logger("activation complete");
   })();
 }
 

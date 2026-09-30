@@ -6,6 +6,13 @@ export interface AdapterConfig {
 
 export type Environment = Record<string, string | undefined>;
 
+export type DebugLogger = (line: string) => void;
+
+export function createDebugLogger(enabled: boolean, sink: (line: string) => void = console.warn): DebugLogger {
+  if (!enabled) return () => {};
+  return (line) => sink(`[pi-skills] ${line}`);
+}
+
 export function parseConfig(env: Environment): AdapterConfig {
   const rootsValue = env.PI_SKILLS_ROOTS;
   const roots = rootsValue?.trim()

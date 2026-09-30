@@ -110,6 +110,28 @@ test("injection advertises only selected roots, overwrites its stable section, a
   assert.deepEqual((await store.all()).map((skill) => skill.name).sort(), ["after-compact", "custom-skill", "external", "native"]);
 });
 
+test("injection logs skill count and section deletion", async () => {
+  const skillPath = path.join(temp, "debug-advertised");
+  const root: SkillRoot = { path: skillPath, scope: "project", source: ".claude", maxDepth: 3 };
+  await writeSkill(skillPath, "debug-skill", "Debug fixture");
+  const store = createSkillStore([root]);
+  const handlers = new Map<string, (event: { systemPromptOptions: { sections: Record<string, string> } }) => unknown>();
+  const pi = { on(name: string, handler: (event: { systemPromptOptions: { sections: Record<string, string> } }) => unknown) { handlers.set(name, handler); } } as unknown as ExtensionAPI;
+  const lines: string[] = [];
+  registerInjection(pi, { store, advertisedRoots: [root], logger: (line) => lines.push(line) });
+  const rendered = { systemPromptOptions: { sections: {} as Record<string, string> } };
+  await handlers.get("before_agent_start")?.(rendered);
+  assert.ok(rendered.systemPromptOptions.sections["available-skills"]);
+  const deleted = { systemPromptOptions: { sections: { "available-skills": "stale" } } };
+  registerInjection(pi, { store: createSkillStore([]), advertisedRoots: [], logger: (line) => lines.push(line) });
+  await handlers.get("before_agent_start")?.(deleted);
+  assert.equal(deleted.systemPromptOptions.sections["available-skills"], undefined);
+  assert.deepEqual(lines, [
+    "injected available-skills section with 1 skills",
+    "deleted available-skills section (0 skills)",
+  ]);
+});
+
 test("empty advertised results leave the section unset and clear stale content", async () => {
   const skillRoot: SkillRoot = { path: path.join(temp, "empty-advertised"), scope: "project", source: ".claude", maxDepth: 3 };
   const store = createSkillStore([skillRoot]);

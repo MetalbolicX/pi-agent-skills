@@ -52,6 +52,26 @@ test("before_agent_start is registered and renders immediately after activation 
   }
 });
 
+test("PI_SKILLS_DEBUG logs root discovery, tool registration, and activation completion", async () => {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), "extension-debug-"));
+  try {
+    const cwd = path.join(base, "workspace");
+    const home = path.join(base, "home");
+    await fs.mkdir(cwd, { recursive: true });
+    await fs.mkdir(home, { recursive: true });
+    const lines: string[] = [];
+    const pi = fakePi();
+    await createExtension({ cwd, home, env: { PI_SKILLS_DEBUG: "1" }, warn: (line) => lines.push(line) })(pi.api);
+    assert.equal(lines.length, 3);
+    assert.match(lines[0]!, /^\[pi-skills\] discovered \d+ roots: /);
+    assert.ok(lines[0]!.includes(path.resolve(cwd)));
+    assert.equal(lines[1], "[pi-skills] registered tools: get_available_skills, read_skill_file, run_skill_script");
+    assert.equal(lines[2], "[pi-skills] activation complete");
+  } finally {
+    await fs.rm(base, { recursive: true, force: true });
+  }
+});
+
 test("createExtension injects cwd, home, and environment discovery roots", async () => {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), "extension-injection-"));
   try {

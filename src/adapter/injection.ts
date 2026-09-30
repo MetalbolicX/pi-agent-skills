@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { DebugLogger } from "./config.js";
 import type { Skill, SkillRoot, SkillStore } from "../core/types.js";
 
 // Skill fields come from attacker-editable SKILL.md files; they must never break out of the
@@ -24,13 +25,19 @@ export function renderAvailableSkillsBlock(summaries: readonly Pick<Skill, "name
   return `<available-skills>\n${entries}\n\nThese skills come from folders Pi does not index natively (.claude/.codex/.opencode user and project scopes, and ~/.config/opencode/skills). Use get_available_skills to list them, read_skill_file to read their files, and run_skill_script to run their registered scripts.\n</available-skills>`;
 }
 
-export function registerInjection(pi: ExtensionAPI, deps: { store: SkillStore; advertisedRoots: readonly SkillRoot[] }): void {
+export function registerInjection(pi: ExtensionAPI, deps: { store: SkillStore; advertisedRoots: readonly SkillRoot[]; logger?: DebugLogger }): void {
+  const logger = deps.logger ?? (() => {});
   pi.on("before_agent_start", async (event) => {
     const advertisedPaths = new Set(deps.advertisedRoots.map((root) => path.resolve(root.path)));
     const skills = (await deps.store.all()).filter((skill) => advertisedPaths.has(path.resolve(skill.root.path)));
     const block = renderAvailableSkillsBlock(skills);
-    if (block) event.systemPromptOptions.sections["available-skills"] = block;
-    else delete event.systemPromptOptions.sections["available-skills"];
+    if (block) {
+      event.systemPromptOptions.sections["available-skills"] = block;
+      logger(`injected available-skills section with ${skills.length} skills`);
+    } else {
+      delete event.systemPromptOptions.sections["available-skills"];
+      logger("deleted available-skills section (0 skills)");
+    }
   });
   pi.on("session_compact", () => deps.store.invalidate());
 }
