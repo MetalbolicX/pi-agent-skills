@@ -26,7 +26,8 @@
     "test": "node --test --import tsx",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",
-    "build": "rolldown -c"
+    "build": "rolldown -c",
+    "prepublishOnly": "pnpm build"
   },
   "pi": {
     "extensions": ["./dist/extension.js"]
