@@ -16,7 +16,7 @@ export function scanContent(content: string): RiskHit[] {
     if (!trimmed || trimmed.startsWith("#")) continue;
     if (/\b(curl|wget|fetch|openssl|s_client|netcat|nc)\b(?![\w-])/.test(trimmed)) hits.push({ category: "network-egress", evidence: line });
     if (/\b(write|put|setContent|WriteFile|mkdir|mv|cp)\b(?![\w-]).*[/"'](?!\.)/.test(trimmed)) hits.push({ category: "out-of-skill-write", evidence: line });
-    if (/\b(sudo|su |pkexec|doas)\b(?![\w-])|\bchmod\s+(?:-[RfvcP]+\s+)*(?:[12467][0-7]{3}|[0-7]{2}7|[ugoa]*\+s)(?![\w-])/.test(trimmed)) hits.push({ category: "privilege-escalation", evidence: line });
+    if (/\b(sudo|su|pkexec|doas)\b(?![\w-])|\bchmod\s+(?:-[RfvcP]+\s+)*(?:[12467][0-7]{3}|[0-7]{2}7|[ugoa]*\+s)(?![\w-])/.test(trimmed)) hits.push({ category: "privilege-escalation", evidence: line });
     if (/\b(export|env |source |\..*profile|\.bashrc|\.zshrc|eval)\b(?![\w-])/.test(trimmed)) hits.push({ category: "shell-env-mutation", evidence: line });
   }
   return hits;

@@ -13,7 +13,7 @@ function scalar(input: string): unknown {
 }
 
 export function parseFrontmatter(text: string): Record<string, unknown> | null {
-  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  const match = text.replace(/^\uFEFF/, "").match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!match?.[1]) return null;
   const result: Record<string, unknown> = {};
   for (const line of match[1].split(/\r?\n/)) {

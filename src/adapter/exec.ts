@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import { spawn as nodeSpawn, type ChildProcess } from "node:child_process";
 import * as path from "node:path";
-import { discoverScripts, isRegisteredScript } from "../core/scripts.js";
+import { discoverScripts } from "../core/scripts.js";
 import { scanContent } from "../core/scan.js";
 import type { AdapterConfig } from "./config.js";
 import type { SkillStore } from "../core/types.js";
@@ -35,7 +35,7 @@ export async function executeSkillScript(
   const skill = await store.resolve(skillName);
   const registry = await discoverScripts(skill.skillDir);
   const script = registry.find((item) => item.relativePath === scriptName || item.absolutePath === scriptName);
-  if (!script || !isRegisteredScript(registry, script.absolutePath) || !path.isAbsolute(script.absolutePath)) {
+  if (!script || !path.isAbsolute(script.absolutePath)) {
     return { status: "denied", output: `Script '${scriptName}' is not registered for skill '${skillName}'.` };
   }
   const content = await fs.readFile(script.absolutePath, "utf8");

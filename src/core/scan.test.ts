@@ -8,6 +8,9 @@ test("detects each source-defined risk category independently", () => {
   assert.deepEqual(category("curl https://example.test"), ["network-egress"]);
   assert.deepEqual(category("cp file /tmp/file"), ["out-of-skill-write"]);
   assert.deepEqual(category("sudo command"), ["privilege-escalation"]);
+  assert.deepEqual(category("su"), ["privilege-escalation"]);
+  assert.deepEqual(category("su root"), ["privilege-escalation"]);
+  assert.deepEqual(category("su -c id"), ["privilege-escalation"]);
   assert.deepEqual(category("export PATH=/tmp"), ["shell-env-mutation"]);
 });
 

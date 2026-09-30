@@ -31,7 +31,12 @@ export function findClosestMatch(input: string, candidates: readonly string[]): 
 
 export function resolveSkillName(name: string, skills: ReadonlyMap<string, { path: string; relativePath: string }>): string | null {
   if (skills.has(name)) return name;
-  const suffixes = [...skills].filter(([, skill]) => skill.path.endsWith(name) || skill.relativePath.endsWith(name)).map(([key]) => key);
+  const isSegmentSuffix = (value: string): boolean => {
+    if (value === name || !value.endsWith(name)) return value === name;
+    const separator = value[value.length - name.length - 1];
+    return separator === "/" || separator === "\\";
+  };
+  const suffixes = [...skills].filter(([, skill]) => isSegmentSuffix(skill.path) || isSegmentSuffix(skill.relativePath)).map(([key]) => key);
   if (suffixes.length === 1) return suffixes[0] ?? null;
   if (suffixes.length > 1) throw new Error(`Ambiguous skill name '${name}' — multiple candidates: ${suffixes.join(", ")}`);
   return findClosestMatch(name, [...skills.keys()]);

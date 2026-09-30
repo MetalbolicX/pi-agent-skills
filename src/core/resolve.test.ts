@@ -27,6 +27,13 @@ test("resolution prioritizes exact then suffix then fuzzy", () => {
   assert.equal(resolveSkillName("typescrip", skills), "typescript");
 });
 
+test("suffix matching requires a path segment boundary before fuzzy fallback", () => {
+  const skill = { path: "/skills/not-alias", relativePath: "not-alias" };
+  const skills = new Map([["unrelated", skill]]);
+  assert.equal(skill.path.endsWith("alias") || skill.relativePath.endsWith("alias"), true);
+  assert.equal(resolveSkillName("alias", skills), null);
+});
+
 test("ambiguous suffixes fail with candidate names", () => {
   const skills = new Map([[
     "one", { path: "/one/alias", relativePath: "one/alias" },
