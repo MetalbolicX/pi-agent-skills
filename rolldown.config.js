@@ -16,6 +16,7 @@ export default defineConfig([
     output: {
       file: "dist/cli.mjs",
       format: "esm",
+      banner: "#!/usr/bin/env node",
     },
     platform: "node",
     external: ["node:*"],

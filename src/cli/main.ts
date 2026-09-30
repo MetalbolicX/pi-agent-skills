@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const USAGE = `Usage: pi-skills <command> [options]
@@ -120,6 +121,7 @@ export function runCli(args: string[], io: CliIo = defaultIo): number {
   return 1;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+const invoked = process.argv[1] ? realpathSync(process.argv[1]) : undefined;
+if (invoked && import.meta.url === pathToFileURL(invoked).href) {
   process.exitCode = runCli(process.argv.slice(2));
 }
