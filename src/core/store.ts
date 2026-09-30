@@ -6,10 +6,12 @@ import { resolveSkillName } from "./resolve.js";
 
 const DEFAULT_TTL_MS = 5_000;
 
-export function createSkillStore(roots: readonly SkillRoot[], ttlMs = DEFAULT_TTL_MS, onWarning: (warning: string) => void = console.warn, onDuplicate?: DuplicateWarning): SkillStore {
+export function createSkillStore(roots: readonly SkillRoot[], ttlMs = DEFAULT_TTL_MS, onWarning: (warning: string) => void = console.warn, onDuplicate?: DuplicateWarning, deps?: { scan?: () => Promise<Map<string, Skill>> }): SkillStore {
   let skills: Map<string, Skill> | undefined;
   let expiresAt = 0;
   let inflight: Promise<Map<string, Skill>> | undefined;
+  let inflightGeneration = 0;
+  let generation = 0;
 
   const scan = async (): Promise<Map<string, Skill>> => {
     const result = new Map<string, Skill>();
@@ -35,14 +37,19 @@ export function createSkillStore(roots: readonly SkillRoot[], ttlMs = DEFAULT_TT
 
   const ensure = async (): Promise<Map<string, Skill>> => {
     if (skills && Date.now() < expiresAt) return skills;
-    if (!inflight) {
-      inflight = scan();
-      try { skills = await inflight; expiresAt = Date.now() + ttlMs; }
-      finally { inflight = undefined; }
-    } else {
-      return inflight;
+    const isOwner = !inflight;
+    if (isOwner) {
+      inflightGeneration = generation;
+      inflight = (deps?.scan ?? scan)();
     }
-    return skills;
+    const pending = inflight!;
+    const scanGeneration = inflightGeneration;
+    let result: Map<string, Skill>;
+    try { result = await pending; }
+    finally { if (isOwner) inflight = undefined; }
+    if (scanGeneration !== generation) return ensure();
+    if (isOwner) { skills = result; expiresAt = Date.now() + ttlMs; }
+    return result;
   };
 
   return {
@@ -54,6 +61,6 @@ export function createSkillStore(roots: readonly SkillRoot[], ttlMs = DEFAULT_TT
       if (!skill) throw new Error(`Skill '${name}' not found`);
       return skill;
     },
-    invalidate(): void { skills = undefined; expiresAt = 0; },
+    invalidate(): void { generation++; skills = undefined; expiresAt = 0; },
   };
 }
