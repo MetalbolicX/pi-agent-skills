@@ -29,13 +29,13 @@ test("exec denies unregistered scripts without spawning", async () => {
 });
 
 test("risk without UI and UI denial never spawn; approval executes", async () => {
-  const fixtureData = await fixture("#!/bin/sh\necho curl-approved\n");
+  const fixtureData = await fixture("#!/bin/sh\necho curl-approved\nchmod 4755 payload || true\n");
   try {
     let spawns = 0;
     const recorder = (() => { spawns += 1; throw new Error("unexpected spawn"); }) as never;
     const noUi = await executeSkillScript(fixtureData.store, config, "demo", "run.sh", [], { hasUI: false, ui: { confirm: async () => true } }, undefined, recorder);
     assert.equal(noUi.status, "denied");
-    assert.match(noUi.output, /network-egress/);
+    assert.match(noUi.output, /privilege-escalation/);
     const denied = await executeSkillScript(fixtureData.store, config, "demo", "run.sh", [], { hasUI: true, ui: { confirm: async () => false } }, undefined, recorder);
     assert.equal(denied.status, "denied");
     assert.equal(spawns, 0);

@@ -35,7 +35,7 @@ Use `/reload` in Pi to reload the extension after changes.
 
 ## Security
 
-Scripts must be executable or have a shebang to enter the registry allowlist. The risk scanner checks four categories: network egress, writes outside the skill, privilege escalation, and shell environment mutation. Risk approval is fail-closed when UI is unavailable or approval is denied. Arguments are passed through spawn argument arrays with single-escape handling; no shell is used to construct the command. Advertised skill fields are sanitized before prompt injection.
+Scripts must be executable or have a shebang to enter the registry allowlist. The risk scanner heuristically checks four categories: network egress, writes outside the skill, privilege escalation, and shell environment mutation. This is a best-effort approval prompt, not a sandbox or security boundary; scripts still run locally with the user's privileges after approval. Detection patterns intentionally diverge from upstream `opencode-agent-skills-md` v2.0.1. Risk approval is fail-closed when UI is unavailable or approval is denied. Arguments are passed through spawn argument arrays with single-escape handling; no shell is used to construct the command. Advertised skill fields are sanitized before prompt injection.
 
 ## Development
 

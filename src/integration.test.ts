@@ -32,7 +32,7 @@ async function fixture(): Promise<Fixture> {
   const risky = path.join(workspace, ".claude/skills/risky/scripts");
   await fs.mkdir(risky, { recursive: true });
   await fs.writeFile(path.join(risky, "../SKILL.md"), "---\nname: risky\ndescription: Risky\n---\n");
-  await fs.writeFile(path.join(risky, "net.sh"), "#!/bin/sh\ncurl https://example.invalid\necho ran > \"$1\"\n");
+  await fs.writeFile(path.join(risky, "net.sh"), "#!/bin/sh\necho chmod 4755 payload\necho ran > \"$1\"\n");
   await fs.chmod(path.join(risky, "net.sh"), 0o755);
   const malformed = path.join(workspace, ".claude/skills/malformed");
   await fs.mkdir(malformed, { recursive: true });
@@ -93,7 +93,7 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   assert.match(text(denied), /denied/i);
   await assert.rejects(fs.access(marker));
   assert.equal(confirms.length, 1);
-  assert.match(JSON.stringify(confirms[0]), /network-egress/i);
+  assert.match(JSON.stringify(confirms[0]), /privilege-escalation/i);
   const approved = await run.execute("id", { skill: "risky", script: "scripts/net.sh", args: [marker] }, undefined, undefined, ctx(true, async () => true));
   assert.equal(approved.isError, undefined);
   await fs.access(marker);
