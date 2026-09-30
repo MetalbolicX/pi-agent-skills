@@ -53,24 +53,19 @@ after(async () => { await Promise.all(fixtures.map(({ root }) => fs.rm(root, { r
 async function setup(): Promise<Fixture> { const value = await fixture(); fixtures.push(value); return value; }
 interface ToolResult { content: { text: string }[]; isError?: boolean; }
 type CapturedTool = { name: string; execute: (id: string, params: Record<string, unknown>, signal?: AbortSignal, update?: unknown, ctx?: unknown) => Promise<ToolResult> };
-function register(workspace: string, home: string, env: Record<string, string> = {}) {
+async function register(workspace: string, home: string, env: Record<string, string> = {}) {
   const tools: CapturedTool[] = [];
   const handlers = new Map<string, (...args: unknown[]) => unknown>();
   const pi = { registerTool: (tool: CapturedTool) => tools.push(tool), on: (name: string, handler: (...args: unknown[]) => unknown) => handlers.set(name, handler) }; 
-  createExtension({ cwd: workspace, home, env })(pi as never);
+  await createExtension({ cwd: workspace, home, env })(pi as never);
   return { tools, handlers };
-}
-async function ready(tools: CapturedTool[]) {
-  for (let i = 0; i < 100 && tools.length < 3; i += 1) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.equal(tools.length, 3);
 }
 const text = (result: ToolResult) => result.content[0]!.text;
 const ctx = (hasUI: boolean, confirm: (...args: unknown[]) => Promise<boolean>) => ({ hasUI, ui: { confirm }, cwd: "" });
 
 test("factory tools cover discovery, safe reads, script approval, timeout, injection, and configured roots", async () => {
   const f = await setup();
-  const { tools, handlers } = register(f.workspace, f.home);
-  await ready(tools);
+  const { tools, handlers } = await register(f.workspace, f.home);
   const tool = (name: string) => { const found = tools.find((entry) => entry.name === name); assert.ok(found); return found; };
   const listing = JSON.parse(text(await tool("get_available_skills").execute("id", {}, undefined, undefined, {})));
   for (const name of ["demo", "risky", "advr", "userdemo"]) assert.ok(listing.skills.some((skill: { name: string }) => skill.name === name));
@@ -106,8 +101,7 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   const timeoutSkill = path.join(f.workspace, ".claude/skills/demo/scripts/sleep.sh");
   await fs.writeFile(timeoutSkill, "#!/bin/sh\nwhile :; do :; done\n");
   await fs.chmod(timeoutSkill, 0o755);
-  const timeoutRegistration = register(f.workspace, f.home, { PI_SKILLS_SCRIPT_TIMEOUT_MS: "150" });
-  await ready(timeoutRegistration.tools);
+  const timeoutRegistration = await register(f.workspace, f.home, { PI_SKILLS_SCRIPT_TIMEOUT_MS: "150" });
   const start = Date.now();
   const timed = await timeoutRegistration.tools.find((entry) => entry.name === "run_skill_script")!.execute("id", { skill: "demo", script: "scripts/sleep.sh" }, undefined, undefined, ctx(true, async () => true));
   assert.match(text(timed), /timed out|timeout/i);
@@ -138,7 +132,6 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   await fs.mkdir(overrideSkill, { recursive: true });
   await fs.writeFile(path.join(overrideSkill, "SKILL.md"), "---\nname: reachable\ndescription: Override\n---\n");
   await fs.writeFile(path.join(overrideSkill, "data.txt"), "override works");
-  const overridden = register(f.workspace, f.home, { PI_SKILLS_ROOTS: override });
-  await ready(overridden.tools);
+  const overridden = await register(f.workspace, f.home, { PI_SKILLS_ROOTS: override });
   assert.equal(text(await overridden.tools.find((entry) => entry.name === "read_skill_file")!.execute("id", { skill: "reachable", file: "data.txt" })), "override works");
 });
