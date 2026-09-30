@@ -29,7 +29,7 @@ Use `/reload` in Pi to reload the extension after changes.
 
 - `PI_SKILLS_ROOTS` — colon-separated custom roots replacing the default roots.
 - `PI_SKILLS_SCRIPT_TIMEOUT_MS` — script timeout in milliseconds (default: `30000`).
-- `PI_SKILLS_DEBUG` — enable one-line debug logs for root discovery, tool registration, and available-skills block rendering (`1`, `true`, `yes`, or `on`).
+- `PI_SKILLS_DEBUG` — enable one-line debug logs for root discovery, tool registration, activation completion, and available-skills block rendering (`1`, `true`, `yes`, or `on`).
 
 `PI_SKILLS_ROOTS` override roots are discovered, reachable through the tools, and advertised in `get_available_skills` and the injected prompt block. Pi-native roots remain tool-reachable but are never re-advertised.
 
