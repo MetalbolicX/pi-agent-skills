@@ -5,6 +5,21 @@ import * as path from "node:path";
 import test from "node:test";
 import { getToolRoots } from "./roots.js";
 
+test("PI_SKILLS_ROOTS overrides are tagged, advertised, and survive native-root dedupe", async () => {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), "skills-roots-override-"));
+  try {
+    const repo = path.join(base, "repo");
+    const overridePath = path.join(repo, ".agents", "skills");
+    await fs.mkdir(path.join(repo, ".git"), { recursive: true });
+    const roots = await getToolRoots(repo, path.join(base, "home"), [overridePath]);
+    const matches = roots.all.filter((root) => root.path === overridePath);
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0]?.source, "override");
+    assert.ok(roots.advertised.some((root) => root.path === overridePath && root.source === "override"));
+    assert.ok(!roots.advertised.some((root) => root.source === "native"));
+  } finally { await fs.rm(base, { recursive: true, force: true }); }
+});
+
 test("tool roots include extension and Pi-native roots using the git root", async () => {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), "skills-roots-"));
   try {

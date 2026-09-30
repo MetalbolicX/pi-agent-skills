@@ -81,21 +81,25 @@ test("renderer keeps legitimate field content intact", () => {
 test("injection advertises only selected roots, overwrites its stable section, and compact invalidates the store", async () => {
   const advertisedPath = path.join(temp, "claude");
   const nativePath = path.join(temp, "agents");
+  const overridePath = path.join(temp, "custom");
   const advertised: SkillRoot = { path: advertisedPath, scope: "project", source: ".claude", maxDepth: 3 };
   const native: SkillRoot = { path: nativePath, scope: "project", source: ".agents", maxDepth: 3 };
+  const override: SkillRoot = { path: overridePath, scope: "project", source: "override", maxDepth: 3 };
   await writeSkill(advertisedPath, "external", "External skill");
   await writeSkill(nativePath, "native", "Native skill");
-  const store = createSkillStore([advertised, native]);
+  await writeSkill(overridePath, "custom-skill", "Override skill");
+  const store = createSkillStore([advertised, native, override]);
   type PromptEvent = { systemPromptOptions: { sections: Record<string, string> } };
   const handlers = new Map<string, (event: PromptEvent) => unknown>();
   const pi = { on(name: string, handler: (event: PromptEvent) => unknown) { handlers.set(name, handler); } } as unknown as ExtensionAPI;
-  registerInjection(pi, { store, advertisedRoots: [advertised] });
+  registerInjection(pi, { store, advertisedRoots: [advertised, override] });
   const event = () => ({ systemPromptOptions: { sections: {} as Record<string, string> } });
   const first = event();
   await handlers.get("before_agent_start")?.(first);
   const firstBlock = first.systemPromptOptions.sections["available-skills"];
   assert.ok(firstBlock);
   assert.match(firstBlock, /external/);
+  assert.match(firstBlock, /^- custom-skill$/m);
   assert.doesNotMatch(firstBlock, /^- native$/m);
   const second = event();
   await handlers.get("before_agent_start")?.(second);
@@ -103,7 +107,7 @@ test("injection advertises only selected roots, overwrites its stable section, a
   assert.equal(second.systemPromptOptions.sections["available-skills"], first.systemPromptOptions.sections["available-skills"]);
   await writeSkill(advertisedPath, "after-compact", "Added after compact");
   await handlers.get("session_compact")?.({ systemPromptOptions: { sections: {} } });
-  assert.deepEqual((await store.all()).map((skill) => skill.name).sort(), ["after-compact", "external", "native"]);
+  assert.deepEqual((await store.all()).map((skill) => skill.name).sort(), ["after-compact", "custom-skill", "external", "native"]);
 });
 
 test("empty advertised results leave the section unset and clear stale content", async () => {

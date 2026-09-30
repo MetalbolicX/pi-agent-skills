@@ -134,4 +134,11 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   await fs.writeFile(path.join(overrideSkill, "data.txt"), "override works");
   const overridden = await register(f.workspace, f.home, { PI_SKILLS_ROOTS: override });
   assert.equal(text(await overridden.tools.find((entry) => entry.name === "read_skill_file")!.execute("id", { skill: "reachable", file: "data.txt" })), "override works");
+  const overrideListing = JSON.parse(text(await overridden.tools.find((entry) => entry.name === "get_available_skills")!.execute("id", {}, undefined, undefined, {}))) as { skills: Array<{ name: string }> };
+  assert.ok(overrideListing.skills.some((skill) => skill.name === "reachable"));
+  assert.ok(!overrideListing.skills.some((skill) => skill.name === "agent-native"));
+  const overridePrompt = { sections: {} as Record<string, string> };
+  await overridden.handlers.get("before_agent_start")?.({ systemPromptOptions: overridePrompt });
+  assert.match(overridePrompt.sections["available-skills"]!, /^- reachable$/m);
+  assert.ok(!overridePrompt.sections["available-skills"]!.includes("agent-native"));
 });

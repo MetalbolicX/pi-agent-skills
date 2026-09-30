@@ -25,9 +25,9 @@ test("computes project roots from git root and user roots from home", async () =
 
 test("advertises only extension roots when composing a mixed root list", () => {
   const root = (source: SkillRoot["source"]): SkillRoot => ({ path: `/${source}/skills`, scope: "project", source, maxDepth: 3 });
-  const config = rootsFromList([root("native"), root(".agents"), root(".claude"), root(".codex"), root(".opencode"), root("opencode-config")]);
-  assert.deepEqual(config.advertised.map((item) => item.source), [".claude", ".codex", ".opencode", "opencode-config"]);
-  assert.equal(config.all.length, 6);
+  const config = rootsFromList([root("native"), root(".agents"), root(".claude"), root(".codex"), root(".opencode"), root("opencode-config"), root("override")]);
+  assert.deepEqual(config.advertised.map((item) => item.source), [".claude", ".codex", ".opencode", "opencode-config", "override"]);
+  assert.equal(config.all.length, 7);
 });
 
 test("uses cwd when no git root exists", async () => {

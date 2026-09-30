@@ -5,7 +5,7 @@ export type SkillScope = "project" | "user";
 export interface SkillRoot {
   path: string;
   scope: SkillScope;
-  source: ".claude" | ".agents" | ".codex" | ".opencode" | "opencode-config" | "native";
+  source: ".claude" | ".agents" | ".codex" | ".opencode" | "opencode-config" | "native" | "override";
   maxDepth: number;
 }
 

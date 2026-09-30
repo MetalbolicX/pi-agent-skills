@@ -21,7 +21,7 @@ async function findProjectRoot(cwd: string): Promise<string> {
 export async function getToolRoots(cwd: string, home: string, override?: readonly string[]): Promise<RootsConfig> {
   const defaults = await getDefaultRoots(cwd, home);
   if (override?.length) {
-    defaults.all = override.map((root): SkillRoot => ({ path: path.resolve(root), scope: "project", source: "native", maxDepth: 3 }));
+    defaults.all = override.map((root): SkillRoot => ({ path: path.resolve(root), scope: "project", source: "override", maxDepth: 3 }));
   }
   const projectRoot = await findProjectRoot(cwd);
   const native: SkillRoot[] = [

@@ -31,7 +31,7 @@ Use `/reload` in Pi to reload the extension after changes.
 - `PI_SKILLS_SCRIPT_TIMEOUT_MS` — script timeout in milliseconds (default: `30000`).
 - `PI_SKILLS_DEBUG` — enable debug logging (`1`, `true`, `yes`, or `on`).
 
-Custom override roots are reachable through the tools but currently are not advertised in `get_available_skills` or the injected prompt block; this is a known gap tracked as a follow-up in `odd/tasks/pi-agent-skills-extension.md`.
+`PI_SKILLS_ROOTS` override roots are discovered, reachable through the tools, and advertised in `get_available_skills` and the injected prompt block. Pi-native roots remain tool-reachable but are never re-advertised.
 
 ## Security
 

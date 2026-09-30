@@ -4,7 +4,7 @@ import type { RootsConfig, SkillRoot } from "./types.js";
 
 const DEPTH = 3;
 const extensionSources = [".claude", ".agents", ".codex", ".opencode"] as const;
-const ADVERTISED_SOURCES = new Set<SkillRoot["source"]>([".claude", ".codex", ".opencode", "opencode-config"]);
+const ADVERTISED_SOURCES = new Set<SkillRoot["source"]>([".claude", ".codex", ".opencode", "opencode-config", "override"]);
 const isAdvertisedRoot = (root: SkillRoot): boolean => ADVERTISED_SOURCES.has(root.source);
 
 async function findGitRoot(cwd: string): Promise<string> {
@@ -38,6 +38,6 @@ export async function getDefaultRoots(cwd: string, home: string): Promise<RootsC
 }
 
 export function rootsFromList(roots: readonly SkillRoot[]): RootsConfig {
-  // Custom roots tagged `native` remain tool-reachable but are not re-advertised.
+  // Custom override roots are advertised; genuinely native roots are tool-reachable but not re-advertised.
   return { all: [...roots], advertised: roots.filter(isAdvertisedRoot) };
 }
