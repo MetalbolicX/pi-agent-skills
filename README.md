@@ -4,8 +4,8 @@ A Pi extension that fills skill gaps, ported from `opencode-agent-skills-md` v2.
 
 ## Tools
 
-- `get_available_skills` — list skills advertised from supported non-native roots.
-- `read_skill_file` — read a file within a skill; traversal attempts are reported as `traversal-denied`, distinct from `not_found`.
+- `get_available_skills` — list skills advertised from supported non-native roots. Optional `query` ranks by task text, and optional integer `limit` (1–100) bounds results. For example, `get_available_skills({ query: "review a TypeScript change", limit: 5 })` returns matching summaries, skill-directory `path`, exact `skillFile`, static usage guidance, and `pagination` (`totalMatched`, `returned`, `truncated`). Blank queries preserve discovery order; unmatched queries return no suggestions. Ranking is deterministic and metadata-only: exact name first, then name tokens, trigger, and description, with codepoint name ordering for ties.
+- `read_skill_file` — read a file within a skill; after selecting one, load it with `read_skill_file({ skill: "review-helper", file: "SKILL.md" })` before applying it. Resolve relative references within the returned skill directory. Traversal attempts are reported as `traversal-denied`, distinct from `not_found`. Tool guidance helps the agent adopt this discover-then-load flow but cannot guarantee skill selection or override user scope; scripts are never run automatically.
 - `run_skill_script` — run scripts in the skill registry allowlist; risk-scanned scripts require `ctx.ui` approval and fail closed when UI is unavailable, and timeout kills the child process.
 
 The tool store is the union of extension roots and Pi-native roots, so native skills can also be read and run. Only non-native roots are advertised in the injected `<available-skills>` system-prompt block and returned by `get_available_skills`.

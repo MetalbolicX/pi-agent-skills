@@ -67,8 +67,21 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   const f = await setup();
   const { tools, handlers } = await register(f.workspace, f.home);
   const tool = (name: string) => { const found = tools.find((entry) => entry.name === name); assert.ok(found); return found; };
-  const listing = JSON.parse(text(await tool("get_available_skills").execute("id", {}, undefined, undefined, {})));
+  const discover = tool("get_available_skills");
+  const listing = JSON.parse(text(await discover.execute("id", {}, undefined, undefined, {})));
   for (const name of ["demo", "risky", "advr", "userdemo"]) assert.ok(listing.skills.some((skill: { name: string }) => skill.name === name));
+  const selected = JSON.parse(text(await discover.execute("id", { query: "demo" }, undefined, undefined, {}))).skills.find((skill: { name: string }) => skill.name === "demo");
+  assert.ok(selected);
+  assert.equal(selected.path, path.join(f.workspace, ".claude/skills/demo"));
+  assert.equal(selected.skillFile, path.join(f.workspace, ".claude/skills/demo/SKILL.md"));
+  assert.equal(text(await tool("read_skill_file").execute("id", { skill: selected.name, file: "SKILL.md" })), "---\nname: demo\ndescription: Demo skill\n---\n");
+  for (const name of ["get_available_skills", "read_skill_file", "run_skill_script"]) {
+    const registered = tool(name) as CapturedTool & { promptSnippet?: string; promptGuidelines?: string[] };
+    assert.ok(registered.promptSnippet);
+    assert.ok(registered.promptGuidelines?.length);
+  }
+  assert.match((tool("get_available_skills") as CapturedTool & { promptGuidelines?: string[] }).promptGuidelines?.join(" ") ?? "", /metadata as untrusted routing data/);
+  assert.match((tool("run_skill_script") as CapturedTool & { promptGuidelines?: string[] }).promptGuidelines?.join(" ") ?? "", /unless the loaded skill instructions call for/);
   assert.ok(!listing.skills.some((skill: { name: string }) => skill.name === "agent-native"));
   assert.ok(listing.warnings.length > 0);
   const read = tool("read_skill_file");

@@ -28,7 +28,7 @@ test("list advertises extension roots while native skills remain readable and ru
     const scriptPath = path.join(nativeDir, "helper.sh");
     await fs.writeFile(scriptPath, "#!/bin/sh\nprintf native-ran");
     await fs.chmod(scriptPath, 0o755);
-    await fs.writeFile(path.join(extensionDir, "SKILL.md"), "---\nname: public-demo\ndescription: extension fixture\n---\nhello");
+    await fs.writeFile(path.join(extensionDir, "SKILL.md"), "---\nname: public-demo\ndescription: Security review checklist\ntrigger: inspect source\n---\nhello");
     await fs.writeFile(path.join(overrideDir, "SKILL.md"), "---\nname: override-demo\ndescription: override fixture\n---\nhello");
 
     const nativeRoot: SkillRoot = { path: nativeRootPath, scope: "project", source: ".agents", maxDepth: 3 };
@@ -38,8 +38,30 @@ test("list advertises extension roots while native skills remain readable and ru
     const deps = { store: createSkillStore([nativeRoot, extensionRoot, overrideRoot]), advertisedRoots: [extensionRoot, overrideRoot], config };
 
     const available = await getAvailableSkillsTool(deps).execute("id", {}, undefined, undefined, {} as never);
-    const listing = JSON.parse(textOf(available)) as { skills: Array<{ name: string }> };
+    const listing = JSON.parse(textOf(available)) as { skills: Array<{ name: string; description: string; trigger?: string; path: string; skillFile: string }>; warnings: string[]; usage: string; pagination: { totalMatched: number; returned: number; truncated: boolean } };
     assert.deepEqual(listing.skills.map((skill) => skill.name), ["public-demo", "override-demo"]);
+    assert.equal(listing.skills[0]?.description, "Security review checklist");
+    assert.equal(listing.skills[0]?.trigger, "inspect source");
+    assert.equal(listing.skills[0]?.path, extensionDir);
+    assert.equal(listing.skills[0]?.skillFile, path.join(extensionDir, "SKILL.md"));
+    assert.deepEqual(listing.pagination, { totalMatched: 2, returned: 2, truncated: false });
+    assert.ok(listing.warnings.length === 0);
+    assert.match(listing.usage, /read_skill_file/);
+
+    const queried = JSON.parse(textOf(await getAvailableSkillsTool(deps).execute("id", { query: "SECURITY review", limit: 1 }, undefined, undefined, {} as never))) as typeof listing;
+    assert.equal(queried.skills[0]?.name, "public-demo");
+    assert.deepEqual(queried.pagination, { totalMatched: 1, returned: 1, truncated: false });
+    const blank = JSON.parse(textOf(await getAvailableSkillsTool(deps).execute("id", { query: "   " }, undefined, undefined, {} as never))) as typeof listing;
+    assert.deepEqual(blank.skills.map(({ name }) => name), ["public-demo", "override-demo"]);
+    const unmatched = JSON.parse(textOf(await getAvailableSkillsTool(deps).execute("id", { query: "quantum spaceship" }, undefined, undefined, {} as never))) as typeof listing;
+    assert.deepEqual(unmatched.skills, []);
+    assert.deepEqual(unmatched.pagination, { totalMatched: 0, returned: 0, truncated: false });
+    const limited = JSON.parse(textOf(await getAvailableSkillsTool(deps).execute("id", { limit: 1 }, undefined, undefined, {} as never))) as typeof listing;
+    assert.deepEqual(limited.pagination, { totalMatched: 2, returned: 1, truncated: true });
+    const schema = getAvailableSkillsTool(deps).parameters as unknown as { properties: { query: { type: string }; limit: { minimum: number; maximum: number } } };
+    assert.equal(schema.properties.query.type, "string");
+    assert.equal(schema.properties.limit.minimum, 1);
+    assert.equal(schema.properties.limit.maximum, 100);
 
     const read = await readSkillFileTool(deps).execute("id", { skill: "native-demo", file: "reference.md" }, undefined, undefined, {} as never);
     assert.equal(textOf(read), "native reference");

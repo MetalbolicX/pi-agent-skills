@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { after, test } from "node:test";
-import { filterAdvertisedSkills, getDefaultRoots, rootsFromList } from "./discovery.js";
+import { filterAdvertisedSkills, getDefaultRoots, rankSkills, rootsFromList } from "./discovery.js";
 import type { Skill, SkillRoot } from "./types.js";
 
 const temp = await mkdtemp(path.join(tmpdir(), "pi-skills-roots-"));
@@ -53,6 +53,25 @@ test("filters skills by resolved advertised roots, including overrides but exclu
     filterAdvertisedSkills([matchingSkill, overrideSkill, nativeSkill], [advertised, override]).map(({ name }) => name),
     ["advertised", "override"],
   );
+});
+
+test("ranks case-insensitive exact names first and combines name, trigger, and description matches deterministically", () => {
+  const root: SkillRoot = { path: "/skills", scope: "project", source: ".claude", maxDepth: 3 };
+  const skill = (name: string, description: string, trigger?: string): Skill => ({ name, description, ...(trigger ? { trigger } : {}), path: `/skills/${name}/SKILL.md`, skillDir: `/skills/${name}`, root, scope: root.scope, relativePath: name });
+  const exact = skill("Code-Review", "Unrelated");
+  const trigger = skill("audit-helper", "Unrelated", "review code security");
+  const description = skill("guide", "Review code quality");
+  const tieB = skill("beta", "Review tasks");
+  const tieA = skill("alpha", "Review tasks");
+  const exactRanked = rankSkills([description, trigger, exact, tieB, tieA], "CODE-REVIEW");
+  assert.equal(exactRanked[0], exact);
+  assert.ok(exactRanked.length > 1);
+  assert.deepEqual(rankSkills([description, trigger], "SECURITY"), [trigger]);
+  assert.deepEqual(rankSkills([description, trigger], "quality"), [description]);
+  assert.deepEqual(rankSkills([tieB, tieA], "review"), [tieA, tieB]);
+  assert.deepEqual(rankSkills([tieA, tieB], "review"), [tieA, tieB]);
+  assert.deepEqual(rankSkills([tieA, tieB], "the and to"), []);
+  assert.deepEqual(rankSkills([tieA], "unmatched"), []);
 });
 
 test("uses cwd when no git root exists", async () => {
