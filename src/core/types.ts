@@ -27,12 +27,6 @@ export interface Skill {
   trigger?: string;
 }
 
-export interface SkillSummary {
-  name: string;
-  description: string;
-  trigger?: string;
-}
-
 export interface DiscoveredSkillFile {
   filePath: string;
   relativePath: string;
@@ -49,7 +43,6 @@ export type DuplicateWarning = (existing: Skill, duplicate: Skill) => void;
 
 export interface SkillStore {
   all(): Promise<Skill[]>;
-  summaries(): Promise<SkillSummary[]>;
   resolve(name: string): Promise<Skill>;
   invalidate(): void;
 }

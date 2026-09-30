@@ -25,6 +25,3 @@ export function parseConfig(env: Environment): AdapterConfig {
   return { roots, scriptTimeoutMs, debug };
 }
 
-export function fromEnv(): AdapterConfig {
-  return parseConfig(process.env);
-}

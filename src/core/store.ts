@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import type { DuplicateWarning, Skill, SkillRoot, SkillStore, SkillSummary } from "./types.js";
+import type { DuplicateWarning, Skill, SkillRoot, SkillStore } from "./types.js";
 import { parseSkillFile } from "./frontmatter.js";
 import { findSkillFiles } from "./walker.js";
 import { resolveSkillName } from "./resolve.js";
@@ -47,13 +47,6 @@ export function createSkillStore(roots: readonly SkillRoot[], ttlMs = DEFAULT_TT
 
   return {
     async all(): Promise<Skill[]> { return [...(await ensure()).values()]; },
-    async summaries(): Promise<SkillSummary[]> {
-      return [...(await ensure()).values()].map((skill) => {
-        const summary: SkillSummary = { name: skill.name, description: skill.description };
-        if (skill.trigger !== undefined) summary.trigger = skill.trigger;
-        return summary;
-      });
-    },
     async resolve(name: string): Promise<Skill> {
       const found = await ensure();
       const key = resolveSkillName(name, found);

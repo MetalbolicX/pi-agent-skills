@@ -35,13 +35,14 @@ test("caches within TTL, deduplicates concurrent requests, and invalidate rescan
   assert.equal((await store.all()).some((skill) => skill.name === "beta"), true);
 });
 
-test("expired TTL causes a fresh scan and summaries include trigger only when present", async () => {
+test("expired TTL causes a fresh scan through all", async () => {
   const expiringRoot: SkillRoot = { ...root, path: path.join(temp, "expiry") };
   await writeSkill(expiringRoot.path, "gamma", "old");
   const store = createSkillStore([expiringRoot], 1);
   await store.all();
   await new Promise((resolve) => setTimeout(resolve, 10));
   await writeSkill(path.join(expiringRoot.path, "new"), "delta", "new");
-  assert.ok((await store.all()).some((skill) => skill.name === "delta"));
-  assert.equal((await store.summaries()).find((item) => item.name === "gamma")?.trigger, undefined);
+  const refreshed = await store.all();
+  assert.ok(refreshed.some((skill) => skill.name === "delta"));
+  assert.equal(refreshed.find((skill) => skill.name === "gamma")?.trigger, undefined);
 });

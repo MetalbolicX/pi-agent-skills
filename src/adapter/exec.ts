@@ -10,11 +10,11 @@ export interface ExecResult {
   status: "completed" | "denied" | "timeout" | "failed";
   output: string;
 }
-export interface ApprovalContext {
+interface ApprovalContext {
   hasUI: boolean;
   ui: { confirm(title: string, message: string): Promise<boolean> };
 }
-export type Spawn = typeof nodeSpawn;
+type Spawn = typeof nodeSpawn;
 const OUTPUT_LIMIT = 64 * 1024;
 
 function appendLimited(current: string, chunk: Buffer): string {
