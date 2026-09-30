@@ -46,7 +46,7 @@ test("missing store and registry failure report unknown; no entries and malforme
   assert.ok(out.stdout.includes("personal: npm:pi-agent-skills (npm, installed unknown)"));
   assert.ok(out.stdout.includes("latest: unknown"));
   assert.equal(out.stderr.length, 1);
-  assert.match(out.stderr[0] ?? "", /could not read project settings/);
+  assert.match(out.stderr[0] ?? "", /could not parse project settings/);
   const empty = output();
   assert.equal(await status({ agentDir: path.join(root, "empty"), cwd: path.join(root, "empty-repo"), repoRoot: path.join(root, "empty-repo"), io: empty.io }), 0);
   assert.deepEqual(empty.stdout, ["not installed"]);

@@ -1,9 +1,8 @@
-import path from "node:path";
-import { homedir } from "node:os";
 import { findMatchingEntries } from "./match.js";
 import { PACKAGE_NAME } from "./constants.js";
 import { runPi } from "./pi-runner.js";
 import { loadSettings } from "./settings.js";
+import { resolveAgentDir } from "./paths.js";
 
 export interface FlowIo {
   stdout: (line: string) => void;
@@ -14,9 +13,10 @@ export interface InstallOptions {
   local?: boolean;
   dryRun?: boolean;
   version?: string;
-  /** Documented alias for the unpinned install; T5 documents --latest in the README. */
+  /** Explicit alias for the unpinned latest install. */
   latest?: boolean;
   agentDir?: string;
+  env?: Record<string, string | undefined>;
   cwd?: string;
   repoRoot?: string;
   io?: FlowIo;
@@ -29,13 +29,15 @@ const defaultIo: FlowIo = {
 
 export async function install(options: InstallOptions = {}): Promise<number> {
   const io = options.io ?? defaultIo;
-  const agentDir = options.agentDir ?? process.env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
+  const agentDir = resolveAgentDir(options.agentDir, options.env);
   const scope = options.local ? "project" : "personal";
   const settings = await loadSettings(scope, { agentDir, cwd: options.cwd, repoRoot: options.repoRoot });
   let matching: Awaited<ReturnType<typeof findMatchingEntries>>["entries"] = [];
 
-  if (settings.parseError) {
-    io.stderr(`pi-skills: could not read settings (${settings.path}): ${settings.parseError}; skipping dedupe check`);
+  const settingsIssue = settings.readError ?? settings.parseError ?? settings.shapeError;
+  if (settingsIssue) {
+    const kind = settings.readError ? "read" : settings.parseError ? "parse" : "validate";
+    io.stderr(`pi-skills: could not ${kind} settings (${settings.path}): ${settingsIssue}; skipping dedupe check`);
   } else {
     matching = (await findMatchingEntries(settings)).entries;
   }

@@ -1,8 +1,7 @@
 import { existsSync, realpathSync, rmSync } from "node:fs";
-import { homedir } from "node:os";
 import path from "node:path";
 import { findMatchingEntries } from "./match.js";
-import { resolveNpmStorePath } from "./paths.js";
+import { resolveAgentDir, resolveNpmStorePath } from "./paths.js";
 import { runPi } from "./pi-runner.js";
 import { loadSettings } from "./settings.js";
 import type { FlowIo } from "./install.js";
@@ -12,6 +11,7 @@ export interface UninstallOptions {
   dryRun?: boolean;
   purge?: boolean;
   agentDir?: string;
+  env?: Record<string, string | undefined>;
   cwd?: string;
   repoRoot?: string;
   io?: FlowIo;
@@ -24,10 +24,12 @@ const defaultIo: FlowIo = {
 
 export async function uninstall(options: UninstallOptions = {}): Promise<number> {
   const io = options.io ?? defaultIo;
-  const agentDir = options.agentDir ?? process.env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
+  const agentDir = resolveAgentDir(options.agentDir, options.env);
   const settings = await loadSettings(options.local ? "project" : "personal", { agentDir, cwd: options.cwd, repoRoot: options.repoRoot });
-  if (settings.parseError) {
-    io.stderr(`pi-skills: could not read settings (${settings.path}): ${settings.parseError}`);
+  const settingsIssue = settings.readError ?? settings.parseError ?? settings.shapeError;
+  if (settingsIssue) {
+    const kind = settings.readError ? "read" : settings.parseError ? "parse" : "validate";
+    io.stderr(`pi-skills: could not ${kind} settings (${settings.path}): ${settingsIssue}`);
     return 1;
   }
   const matches = await findMatchingEntries(settings);

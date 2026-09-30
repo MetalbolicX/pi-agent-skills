@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
-import { resolvePersonalSettingsPath, resolveProjectSettingsPath } from "./paths.js";
+import { resolveAgentDir, resolvePersonalSettingsPath, resolveProjectSettingsPath } from "./paths.js";
 
 export type PackageEntry =
   | { kind: "string"; index: number; raw: string; source: string }
@@ -11,7 +10,9 @@ export type PackageEntry =
 export interface Settings {
   path: string | undefined;
   exists: boolean;
+  readError?: string;
   parseError?: string;
+  shapeError?: string;
   packages: PackageEntry[];
 }
 
@@ -24,7 +25,7 @@ export interface LoadSettingsOptions {
 
 export async function loadSettings(scopeOrPath: SettingsScope | string, options: LoadSettingsOptions = {}): Promise<Settings> {
   const settingsPath = scopeOrPath === "personal"
-    ? resolvePersonalSettingsPath(options.agentDir ?? path.join(homedir(), ".pi", "agent"))
+    ? resolvePersonalSettingsPath(resolveAgentDir(options.agentDir))
     : scopeOrPath === "project"
       ? resolveProjectSettingsPath({ cwd: options.cwd ?? process.cwd(), repoRoot: options.repoRoot })
       : path.resolve(scopeOrPath);
@@ -36,7 +37,7 @@ export async function loadSettings(scopeOrPath: SettingsScope | string, options:
     text = await readFile(settingsPath, "utf8");
   } catch (error) {
     if (isMissing(error)) return { path: settingsPath, exists: false, packages: [] };
-    return { path: settingsPath, exists: false, parseError: errorMessage(error), packages: [] };
+    return { path: settingsPath, exists: true, readError: errorMessage(error), packages: [] };
   }
 
   let parsed: unknown;
@@ -45,9 +46,11 @@ export async function loadSettings(scopeOrPath: SettingsScope | string, options:
   } catch (error) {
     return { path: settingsPath, exists: true, parseError: errorMessage(error), packages: [] };
   }
-  const packages = parsed && typeof parsed === "object" && "packages" in parsed
-    ? (parsed as { packages?: unknown }).packages
-    : undefined;
+  const hasPackages = parsed !== null && typeof parsed === "object" && "packages" in parsed;
+  const packages = hasPackages ? (parsed as { packages?: unknown }).packages : undefined;
+  if (hasPackages && !Array.isArray(packages)) {
+    return { path: settingsPath, exists: true, shapeError: '"packages" must be an array', packages: [] };
+  }
   if (!Array.isArray(packages)) return { path: settingsPath, exists: true, packages: [] };
 
   return {

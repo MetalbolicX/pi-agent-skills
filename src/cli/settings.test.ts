@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -16,7 +16,9 @@ test("reads strings, object entries with resource filters, and malformed package
     writeFileSync(settingsPath, JSON.stringify({ packages: ["npm:pi-agent-skills", { source: "npm:other", extensions: ["x"], skills: ["y"], prompts: ["z"], themes: ["t"] }, 42, null, { version: 1 }] }));
     const result = await loadSettings(settingsPath);
     assert.equal(result.exists, true);
+    assert.equal(result.readError, undefined);
     assert.equal(result.parseError, undefined);
+    assert.equal(result.shapeError, undefined);
     assert.deepEqual(result.packages.map((entry) => entry.kind), ["string", "object", "malformed", "malformed", "malformed"]);
     assert.equal(result.packages[1]?.kind === "object" && result.packages[1].source, "npm:other");
     assert.equal(result.packages[2]?.kind === "malformed" && result.packages[2].index, 2);
@@ -30,7 +32,33 @@ test("malformed JSON is reported fail-soft and missing files are absent", async 
     const broken = await loadSettings(malformed);
     assert.equal(broken.exists, true);
     assert.ok(broken.parseError);
+    assert.equal(broken.readError, undefined);
+    assert.equal(broken.shapeError, undefined);
     assert.deepEqual(broken.packages, []);
+    const wrongShape = path.join(root, "shape.json");
+    writeFileSync(wrongShape, JSON.stringify({ packages: {} }));
+    const shaped = await loadSettings(wrongShape);
+    assert.equal(shaped.exists, true);
+    assert.equal(shaped.shapeError, '"packages" must be an array');
+    assert.equal(shaped.parseError, undefined);
+    assert.equal(shaped.readError, undefined);
+    const unreadable = path.join(root, "unreadable.json");
+    writeFileSync(unreadable, JSON.stringify({ packages: [] }));
+    chmodSync(unreadable, 0o000);
+    try {
+      const denied = await loadSettings(unreadable);
+      // Root may bypass POSIX mode bits; where enforced, preserve existence and report a read error distinct from parse errors.
+      if (denied.readError) {
+        assert.equal(denied.exists, true);
+        assert.equal(denied.parseError, undefined);
+        assert.equal(denied.shapeError, undefined);
+      }
+    } finally { chmodSync(unreadable, 0o600); }
+    const denied = await loadSettings(root);
+    assert.equal(denied.exists, true);
+    assert.ok(denied.readError);
+    assert.equal(denied.parseError, undefined);
+    assert.equal(denied.shapeError, undefined);
     const missing = await loadSettings(path.join(root, "missing.json"));
     assert.equal(missing.exists, false);
     assert.deepEqual(missing.packages, []);

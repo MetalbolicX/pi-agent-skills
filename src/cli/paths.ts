@@ -3,6 +3,10 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { PACKAGE_NAME } from "./constants.js";
 
+export function resolveAgentDir(agentDir?: string, env: Record<string, string | undefined> = process.env): string {
+  return agentDir ?? env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
+}
+
 export function resolvePersonalSettingsPath(agentDir: string = path.join(homedir(), ".pi", "agent")): string {
   return path.join(agentDir, "settings.json");
 }

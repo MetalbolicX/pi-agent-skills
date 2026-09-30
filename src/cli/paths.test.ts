@@ -3,12 +3,18 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { resolveNpmStorePath, resolvePersonalSettingsPath, resolveProjectSettingsPath } from "./paths.js";
+import { resolveAgentDir, resolveNpmStorePath, resolvePersonalSettingsPath, resolveProjectSettingsPath } from "./paths.js";
 
 function fixture(run: (root: string) => void): void {
   const root = mkdtempSync(path.join(os.tmpdir(), "pi-skills-paths-"));
   try { run(root); } finally { rmSync(root, { recursive: true, force: true }); }
 }
+
+test("resolves agent directory by explicit option, environment, then default", () => {
+  assert.equal(resolveAgentDir("/explicit", { PI_SKILLS_AGENT_DIR: "/environment" }), "/explicit");
+  assert.equal(resolveAgentDir(undefined, { PI_SKILLS_AGENT_DIR: "/environment" }), "/environment");
+  assert.equal(resolveAgentDir(undefined, {}), path.join(os.homedir(), ".pi", "agent"));
+});
 
 test("resolves personal settings and npm store from injected agent directory", () => {
   assert.equal(resolvePersonalSettingsPath("/fixture/agent"), "/fixture/agent/settings.json");

@@ -34,8 +34,9 @@ test("dispatches every known subcommand in an isolated environment", async () =>
     assert.equal(await runCli(["update"], update.deps), 0);
     assert.deepEqual(update.stdout, ["not installed"]);
     const doctor = io(env);
-    assert.equal(await runCli(["doctor"], doctor.deps), 1);
-    assert.deepEqual(doctor.stderr, ["doctor: implemented in a later work unit"]);
+    assert.equal(await runCli(["doctor"], doctor.deps), 0);
+    assert.ok(doctor.stdout.includes("pi-skills doctor"));
+    assert.ok(doctor.stdout.includes("summary: healthy"));
     const status = io(env);
     assert.equal(await runCli(["status"], status.deps), 0);
     assert.deepEqual(status.stdout, ["not installed"]);

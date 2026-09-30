@@ -6,6 +6,7 @@ import { install } from "./install.js";
 import { uninstall } from "./uninstall.js";
 import { status } from "./status.js";
 import { update } from "./update.js";
+import { doctor } from "./doctor.js";
 
 export const USAGE = `Usage: pi-skills <command> [options]
 
@@ -23,7 +24,7 @@ Global options:
 
 Install options:
   --version, -v <ver>  Install an exact version
-  --latest             Install the latest version
+  --latest             Use the unpinned latest version (default behavior)
 
 Uninstall options:
   --purge         Remove cached package files
@@ -130,6 +131,7 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
       version: parsed.options.version,
       latest: parsed.options.latest,
       agentDir,
+      env: io.env,
       io,
     });
   }
@@ -139,12 +141,12 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
       local: parsed.options.local,
       purge: parsed.options.purge,
       agentDir,
+      env: io.env,
       io,
     });
   }
 
-  io.stderr(`${parsed.command}: implemented in a later work unit`);
-  return 1;
+  return doctor({ agentDir, env: io.env, io });
 }
 
 const invoked = process.argv[1] ? realpathSync(process.argv[1]) : undefined;

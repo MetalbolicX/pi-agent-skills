@@ -1,8 +1,6 @@
-import { homedir } from "node:os";
-import path from "node:path";
-import { findMatchingEntries, type MatchingEntry } from "./match.js";
+import { resolveAgentDir } from "./paths.js";
 import { fetchLatestVersion, isStale } from "./registry.js";
-import { loadSettings, type SettingsScope } from "./settings.js";
+import { loadScopedMatchingEntries } from "./scopes.js";
 import type { FlowIo } from "./install.js";
 import { runPi } from "./pi-runner.js";
 
@@ -21,16 +19,8 @@ const defaultIo: FlowIo = { stdout: (line) => console.log(line), stderr: (line) 
 
 export async function update(options: UpdateOptions = {}): Promise<number> {
   const io = options.io ?? defaultIo;
-  const agentDir = options.agentDir ?? options.env?.PI_SKILLS_AGENT_DIR ?? process.env.PI_SKILLS_AGENT_DIR ?? path.join(homedir(), ".pi", "agent");
-  const scopes: Array<{ scope: SettingsScope; entries: MatchingEntry[] }> = [];
-  for (const scope of ["personal", "project"] as const) {
-    const settings = await loadSettings(scope, { agentDir, cwd: options.cwd, repoRoot: options.repoRoot });
-    if (settings.parseError) {
-      io.stderr(`pi-skills: could not read ${scope} settings (${settings.path}): ${settings.parseError}; skipping scope`);
-      continue;
-    }
-    scopes.push({ scope, entries: (await findMatchingEntries(settings)).entries });
-  }
+  const agentDir = resolveAgentDir(options.agentDir, options.env);
+  const scopes = await loadScopedMatchingEntries({ ...options, agentDir, io });
   const entries = scopes.flatMap(({ scope, entries }) => entries.map((entry) => ({ scope, entry })));
   const npmEntries = entries.filter(({ entry }) => entry.kind === "npm");
   const latest = npmEntries.length ? await fetchLatestVersion({ fetch: options.fetch, timeoutMs: options.timeoutMs }) : null;
@@ -47,14 +37,14 @@ export async function update(options: UpdateOptions = {}): Promise<number> {
     if (entry.kind === "npm" && entry.version) {
       if (latest && isStale(entry.version, latest)) {
         io.stdout(`pinned at ${entry.version}; pi update will not move the pin — run: pi-skills install -v ${latest}`);
+      } else if (latest) {
+        io.stdout(`pinned at ${entry.version}; registry confirms the pin is current`);
       } else {
-        io.stdout(`pinned at ${entry.version}; could not confirm a newer version — pi update would only reconcile the pin`);
+        io.stdout(`pinned at ${entry.version}; registry unreachable — could not confirm a newer version`);
       }
       continue;
     }
-    const argv = entry.kind === "npm"
-      ? ["update", "npm:pi-agent-skills", ...(scope === "project" ? ["--local"] : [])]
-      : ["update", entry.entry.source];
+    const argv = ["update", entry.entry.source, ...(scope === "project" ? ["--local"] : [])];
     if (options.dryRun) {
       io.stdout(`[dry-run] Would run: pi ${argv.join(" ")}`);
       continue;
