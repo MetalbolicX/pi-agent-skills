@@ -1,6 +1,6 @@
 {
   "name": "pi-agent-skills",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Pi extension filling skill gaps: path-safe skill file reads, confined skill script execution, cross-harness skill discovery (.claude/.codex/.opencode folders)",
   "type": "module",
   "bin": {
@@ -11,7 +11,9 @@
   "engines": {
     "node": ">=22.19.0"
   },
-  "keywords": ["pi-package"],
+  "keywords": [
+    "pi-package"
+  ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
@@ -33,7 +35,13 @@
     "prepublishOnly": "pnpm build"
   },
   "pi": {
-    "extensions": ["./dist/extension.js"]
+    "extensions": [
+      "./dist/extension.js"
+    ]
   },
-  "files": ["dist", "README.md", "LICENSE"]
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }
