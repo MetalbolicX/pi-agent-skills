@@ -38,6 +38,9 @@ Each WU closes with a Conventional Commit on this branch recording commit hash b
 - WU2: `5726abd`
 - WU3: `48cd1c2`
 - WU4: `128f5e9`
+- Feature doc: `849e0ed`
+- Delivered: fast-forward merged to main `849e0ed` and pushed to origin/main 2026-10-01. Native review requested but unavailable: gentle_review START failed twice with `native-operation-failed` / `schema-incompatible` after package-local binary v4.0.0 install (upstream tooling mismatch; no lineage created). Independent gentle-ai-verify run over WU1-WU3: status verified. WU4 verified by parent spot checks (RED observed, 125/125 suite).
+- WU4: `128f5e9`
 
 ## Route
 
