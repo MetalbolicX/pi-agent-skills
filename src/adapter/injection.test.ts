@@ -176,6 +176,28 @@ test("suggestions rank prompt matches, cap at three, and include advisory guidan
   assert.doesNotMatch(suggestions, /<\/?skill-suggestions>/i);
 });
 
+test("suggestions are cleared across consecutive turns on the registered handler", async () => {
+  const rootPath = path.join(temp, "suggestion-lifecycle");
+  const root: SkillRoot = { path: rootPath, scope: "project", source: ".claude", maxDepth: 3 };
+  await writeSkill(rootPath, "incident-helper", "Incident response helper");
+  const store = createSkillStore([root]);
+  type Event = { prompt: string; systemPromptOptions: { sections: Record<string, string> } };
+  const handlers = new Map<string, (event: Event) => unknown>();
+  const pi = { on(name: string, handler: (event: Event) => unknown) { handlers.set(name, handler); } } as unknown as ExtensionAPI;
+  registerInjection(pi, { store, advertisedRoots: [root] });
+  const handler = handlers.get("before_agent_start");
+  assert.ok(handler);
+  const sections: Record<string, string> = {};
+
+  await handler({ prompt: "incident response", systemPromptOptions: { sections } });
+  assert.match(sections["skill-suggestions"] ?? "", /incident-helper/);
+  assert.ok(sections["available-skills"]);
+
+  await handler({ prompt: "unrelated topic", systemPromptOptions: { sections } });
+  assert.equal(sections["skill-suggestions"], undefined);
+  assert.ok(sections["available-skills"]);
+});
+
 test("trigger match ranks above description-only match", async () => {
   const rootPath = path.join(temp, "suggestion-trigger-rank");
   const root: SkillRoot = { path: rootPath, scope: "project", source: ".claude", maxDepth: 3 };
