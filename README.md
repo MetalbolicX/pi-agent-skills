@@ -12,7 +12,7 @@ The tool store is the union of extension roots and Pi-native roots, so native sk
 
 ## Prompt-aware suggestions
 
-For each turn, the extension adds up to three prompt-ranked advisory skill suggestions alongside the full `available-skills` catalog. Suggestions are candidates to consider, never automatic selections. Skills with `disable-model-invocation` frontmatter are hidden from the automatic catalog and suggestions, but remain resolvable with `read_skill_file`. Known gap: `get_available_skills` still lists hidden skills; this is tracked and out of scope here.
+For each turn, the extension adds up to three prompt-ranked advisory skill suggestions alongside the full `available-skills` catalog. Suggestions are candidates to consider, never automatic selections. Skills with `disable-model-invocation` frontmatter are excluded from the automatic catalog, suggestions, and `get_available_skills`, but remain resolvable with `read_skill_file`.
 
 ## Install
 

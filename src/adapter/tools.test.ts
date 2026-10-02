@@ -11,6 +11,33 @@ function textOf(result: { content: Array<{ type: string; text?: string }> }): st
   return result.content.find((item) => item.type === "text")?.text ?? "";
 }
 
+test("hidden advertised skills stay readable but are excluded from discovery", async () => {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), "skills-hidden-tools-"));
+  try {
+    const rootPath = path.join(base, ".claude", "skills");
+    const hiddenDir = path.join(rootPath, "hidden-security-review");
+    const visibleDir = path.join(rootPath, "visible-security-review");
+    await fs.mkdir(hiddenDir, { recursive: true });
+    await fs.mkdir(visibleDir, { recursive: true });
+    await fs.writeFile(path.join(hiddenDir, "SKILL.md"), "---\nname: hidden-security-review\ndescription: Security review checklist\ndisable-model-invocation: true\n---\nhidden body");
+    await fs.writeFile(path.join(visibleDir, "SKILL.md"), "---\nname: visible-security-review\ndescription: Security review checklist\n---\nvisible body");
+
+    const root: SkillRoot = { path: rootPath, scope: "project", source: ".claude", maxDepth: 3 };
+    const deps = { store: createSkillStore([root]), advertisedRoots: [root], config: { roots: undefined, scriptTimeoutMs: 30_000, debug: false } };
+    const tool = getAvailableSkillsTool(deps);
+    const listing = JSON.parse(textOf(await tool.execute("id", {}, undefined, undefined, {} as never))) as { skills: Array<{ name: string }>; pagination: { totalMatched: number; returned: number; truncated: boolean } };
+    assert.deepEqual(listing.skills.map(({ name }) => name), ["visible-security-review"]);
+    assert.deepEqual(listing.pagination, { totalMatched: 1, returned: 1, truncated: false });
+
+    const queried = JSON.parse(textOf(await tool.execute("id", { query: "security review" }, undefined, undefined, {} as never))) as typeof listing;
+    assert.deepEqual(queried.skills.map(({ name }) => name), ["visible-security-review"]);
+    assert.deepEqual(queried.pagination, { totalMatched: 1, returned: 1, truncated: false });
+
+    const hiddenRead = await readSkillFileTool(deps).execute("id", { skill: "hidden-security-review", file: "SKILL.md" }, undefined, undefined, {} as never);
+    assert.match(textOf(hiddenRead), /hidden body/);
+  } finally { await fs.rm(base, { recursive: true, force: true }); }
+});
+
 test("list advertises extension roots while native skills remain readable and runnable", async () => {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), "skills-tools-"));
   try {
