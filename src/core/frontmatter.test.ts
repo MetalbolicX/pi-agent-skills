@@ -43,3 +43,22 @@ test("returns host-neutral skill record for valid file", async () => {
   assert.equal(result.skill?.skillDir, dir);
   assert.equal(result.skill?.scope, "project");
 });
+
+test("parses disable-model-invocation only when true and ignores absent, false, and malformed values", async () => {
+  const cases = [
+    { name: "hidden", field: "disable-model-invocation: true", expected: true },
+    { name: "absent-flag", field: "", expected: undefined },
+    { name: "false-flag", field: "disable-model-invocation: false", expected: undefined },
+    { name: "array-flag", field: "disable-model-invocation: [true]", expected: undefined },
+    { name: "number-flag", field: "disable-model-invocation: 1", expected: undefined },
+  ];
+  for (const { name, field, expected } of cases) {
+    const dir = path.join(temp, name);
+    await mkdir(dir);
+    const filePath = path.join(dir, "SKILL.md");
+    await writeFile(filePath, `---\nname: ${name}\ndescription: Valid skill${field ? `\n${field}` : ""}\n---\nbody`);
+    const result = await parseSkillFile({ filePath, relativePath: name, root });
+    assert.ok(result.skill, `${name} should remain valid`);
+    assert.equal(result.skill.disableModelInvocation, expected, name);
+  }
+});

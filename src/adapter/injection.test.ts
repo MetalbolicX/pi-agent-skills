@@ -11,10 +11,10 @@ import { registerInjection, renderAvailableSkillsBlock } from "./injection.js";
 const temp = await mkdtemp(path.join(os.tmpdir(), "skills-injection-"));
 after(async () => rm(temp, { recursive: true, force: true }));
 
-async function writeSkill(root: string, name: string, description: string): Promise<void> {
+async function writeSkill(root: string, name: string, description: string, hidden = false): Promise<void> {
   const dir = path.join(root, name);
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: ${description}\n---\n`);
+  await writeFile(path.join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: ${description}${hidden ? "\ndisable-model-invocation: true" : ""}\n---\n`);
 }
 
 test("renderer includes advertised details and returns empty for no skills", () => {
@@ -148,5 +148,34 @@ test("empty advertised results leave the section unset and clear stale content",
   assert.equal(empty.systemPromptOptions.sections["available-skills"], undefined);
   const stale = { systemPromptOptions: { sections: { "available-skills": "stale" } } };
   await handlers.get("before_agent_start")?.(stale);
+  assert.equal(stale.systemPromptOptions.sections["available-skills"], undefined);
+});
+
+test("automatic catalog excludes hidden skills and deletes the section when all advertised skills are hidden", async () => {
+  const rootPath = path.join(temp, "hidden-filter");
+  const root: SkillRoot = { path: rootPath, scope: "project", source: ".claude", maxDepth: 3 };
+  await writeSkill(rootPath, "hidden-skill", "Do not advertise", true);
+  await writeSkill(rootPath, "visible-skill", "Advertise this");
+  const store = createSkillStore([root]);
+  type PromptEvent = { systemPromptOptions: { sections: Record<string, string> } };
+  const handlers = new Map<string, (event: PromptEvent) => unknown>();
+  const pi = { on(name: string, handler: (event: PromptEvent) => unknown) { handlers.set(name, handler); } } as unknown as ExtensionAPI;
+  registerInjection(pi, { store, advertisedRoots: [root] });
+  const mixed = { systemPromptOptions: { sections: {} as Record<string, string> } };
+  await handlers.get("before_agent_start")?.(mixed);
+  const mixedBlock = mixed.systemPromptOptions.sections["available-skills"];
+  assert.match(mixedBlock ?? "", /^- visible-skill$/m);
+  assert.doesNotMatch(mixedBlock ?? "", /hidden-skill/);
+  assert.equal((await store.resolve("hidden-skill")).name, "hidden-skill");
+
+  const hiddenRootPath = path.join(temp, "all-hidden-filter");
+  const hiddenRoot: SkillRoot = { ...root, path: hiddenRootPath };
+  await writeSkill(hiddenRootPath, "only-hidden", "Never catalog this", true);
+  const hiddenStore = createSkillStore([hiddenRoot]);
+  const hiddenHandlers = new Map<string, (event: PromptEvent) => unknown>();
+  const hiddenPi = { on(name: string, handler: (event: PromptEvent) => unknown) { hiddenHandlers.set(name, handler); } } as unknown as ExtensionAPI;
+  registerInjection(hiddenPi, { store: hiddenStore, advertisedRoots: [hiddenRoot] });
+  const stale = { systemPromptOptions: { sections: { "available-skills": "stale" } } };
+  await hiddenHandlers.get("before_agent_start")?.(stale);
   assert.equal(stale.systemPromptOptions.sections["available-skills"], undefined);
 });

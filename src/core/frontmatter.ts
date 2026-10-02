@@ -45,5 +45,8 @@ export async function parseSkillFile(file: DiscoveredSkillFile): Promise<ParseRe
     relativePath: file.relativePath,
   };
   if (typeof data.trigger === "string") skill.trigger = data.trigger;
+  if (data["disable-model-invocation"] === true || data["disable-model-invocation"] === "true") {
+    skill.disableModelInvocation = true;
+  }
   return { skill };
 }

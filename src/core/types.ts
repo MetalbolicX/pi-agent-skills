@@ -25,6 +25,7 @@ export interface Skill {
   scope: SkillScope;
   relativePath: string;
   trigger?: string;
+  disableModelInvocation?: boolean;
 }
 
 export interface DiscoveredSkillFile {

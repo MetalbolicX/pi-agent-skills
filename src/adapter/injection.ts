@@ -28,7 +28,8 @@ export function renderAvailableSkillsBlock(summaries: readonly Pick<Skill, "name
 export function registerInjection(pi: ExtensionAPI, deps: { store: SkillStore; advertisedRoots: readonly SkillRoot[]; logger?: DebugLogger }): void {
   const logger = deps.logger ?? (() => {});
   pi.on("before_agent_start", async (event) => {
-    const skills = filterAdvertisedSkills(await deps.store.all(), deps.advertisedRoots);
+    const skills = filterAdvertisedSkills(await deps.store.all(), deps.advertisedRoots)
+      .filter((skill) => !skill.disableModelInvocation);
     const block = renderAvailableSkillsBlock(skills);
     if (block) {
       event.systemPromptOptions.sections["available-skills"] = block;
