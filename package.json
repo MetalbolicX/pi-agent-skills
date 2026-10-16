@@ -1,6 +1,6 @@
 {
   "name": "pi-agent-skills",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Pi extension filling skill gaps: path-safe skill file reads, confined skill script execution, cross-harness skill discovery (.claude/.codex/.opencode folders)",
   "type": "module",
   "bin": {

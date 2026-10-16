@@ -10,9 +10,9 @@ A Pi extension that fills skill gaps, ported from `opencode-agent-skills-md` v2.
 
 The tool store is the union of extension roots and Pi-native roots, so native skills can also be read and run. Only non-native roots are advertised in the injected `<available-skills>` system-prompt block and returned by `get_available_skills`.
 
-## Prompt-aware suggestions
+## Advisory skill suggestions
 
-For each turn, the extension adds up to three prompt-ranked advisory skill suggestions alongside the full `available-skills` catalog. Suggestions are candidates to consider, never automatic selections. Skills with `disable-model-invocation` frontmatter are excluded from the automatic catalog, suggestions, and `get_available_skills`, but remain resolvable with `read_skill_file`.
+For each turn, the extension injects a single `available-skills` system-prompt section: up to three deterministic advisory suggestions (discovery order, never prompt-ranked) followed by the full catalog. Suggestions are candidates to consider, never automatic selections; use `get_available_skills({ query })` for task-ranked results. The section content is byte-stable across renders — it never depends on the current prompt — so mid-run system-prompt re-renders (model switches through bridges such as pi-claude-bridge, resumed sessions) stay identical to the original capture. The host wraps the section in its own `<available-skills>` tags; the extension never emits them itself. Skills with `disable-model-invocation` frontmatter are excluded from the automatic catalog, suggestions, and `get_available_skills`, but remain resolvable with `read_skill_file`.
 
 ## Install
 

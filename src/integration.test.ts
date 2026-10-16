@@ -128,7 +128,10 @@ test("factory tools cover discovery, safe reads, script approval, timeout, injec
   const block = options.sections["available-skills"]!;
   assert.match(block, /demo/); assert.match(block, /userdemo/); assert.match(block, /advr/);
   assert.ok(!block.includes("agent-native"));
-  assert.equal((block.match(/<\/available-skills>/g) ?? []).length, 1);
+  // The host wraps the section itself; the content must contribute zero literal section tags
+  // (pi-claude-bridge capture fix: single wrap, byte-stable across re-renders).
+  assert.equal((block.match(/<\/?available-skills>/g) ?? []).length, 0);
+  assert.doesNotMatch(block, /<\/?skill-suggestions>/i);
   const second = { sections: {} as Record<string, string> };
   await before({ systemPromptOptions: second });
   assert.equal(Object.keys(second.sections).length, 1);
